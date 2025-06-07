@@ -121,78 +121,82 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     setError(null);
     setIsFallbackData(false);
 
-    try {
-      // Use the PVGIS v5_2 API endpoint for 1kWp system
-      const response = await fetch(
-        `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${latitude}&lon=${longitude}&peakpower=1&loss=14&outputformat=basic`,
-        {
+    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${latitude}&lon=${longitude}&peakpower=1&loss=14&outputformat=basic`;
+
+    // Try each proxy server in sequence
+    for (const proxy of PROXY_SERVERS) {
+      try {
+        const response = await fetch(proxy + encodeURIComponent(pvgisUrl), {
           method: 'GET',
           headers: {
             'Accept': 'text/html',
           },
+        });
+
+        if (!response.ok) {
+          continue; // Try next proxy if this one fails
         }
-      );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+        const text = await response.text();
+        
+        // Parse the HTML table response
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const table = doc.querySelector('table');
+        
+        if (!table) {
+          continue; // Try next proxy if no table found
+        }
 
-      const text = await response.text();
-      
-      // Parse the HTML table response
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/html');
-      const table = doc.querySelector('table');
-      
-      if (!table) {
-        throw new Error('No data table found in response');
-      }
+        // Extract monthly data from the table
+        const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header row
+        const monthlyData = rows.map((row, index) => {
+          const cells = row.querySelectorAll('td');
+          const eday = parseFloat(cells[1]?.textContent || '0'); // E_day value for 1kWp
+          return {
+            month: index + 1,
+            pvout: eday * 30, // Convert daily to monthly values
+            eday // Store the daily value for 1kWp
+          };
+        });
 
-      // Extract monthly data from the table
-      const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header row
-      const monthlyData = rows.map((row, index) => {
-        const cells = row.querySelectorAll('td');
-        const eday = parseFloat(cells[1]?.textContent || '0'); // E_day value for 1kWp
-        return {
-          month: index + 1,
-          pvout: eday * 30, // Convert daily to monthly values
-          eday // Store the daily value for 1kWp
+        // Extract annual total
+        const annualRow = rows[rows.length - 1];
+        const annualEday = parseFloat(annualRow.querySelectorAll('td')[1]?.textContent || '0');
+
+        // Find the worst daily value (minimum E_day)
+        const worstDayPvout = Math.min(...monthlyData.map(month => month.eday));
+
+        const transformedData: PvgisData = {
+          monthly: monthlyData.map(({ month, pvout }) => ({ month, pvout })),
+          annual: {
+            pvout: annualEday * 30 / 12 // Convert annual daily average to monthly
+          },
+          meta: {
+            latitude,
+            longitude,
+            elevation: 0,
+            worstDayPvout // This is the minimum E_day for 1kWp
+          }
         };
-      });
 
-      // Extract annual total
-      const annualRow = rows[rows.length - 1];
-      const annualEday = parseFloat(annualRow.querySelectorAll('td')[1]?.textContent || '0');
-
-      // Find the worst daily value (minimum E_day)
-      const worstDayPvout = Math.min(...monthlyData.map(month => month.eday));
-
-      const transformedData: PvgisData = {
-        monthly: monthlyData.map(({ month, pvout }) => ({ month, pvout })),
-        annual: {
-          pvout: annualEday * 30 / 12 // Convert annual daily average to monthly
-        },
-        meta: {
-          latitude,
-          longitude,
-          elevation: 0,
-          worstDayPvout // This is the minimum E_day for 1kWp
-        }
-      };
-
-      setLoading(false);
-      return transformedData;
-    } catch (err) {
-      console.error('Error fetching PVGIS data:', err);
-      setError('Failed to fetch solar data. Using regional averages.');
-      setIsFallbackData(true);
-      
-      // Fallback to regional averages
-      const region = getNigerianRegion(latitude);
-      const fallbackData = getRegionalFallbackData(region, latitude);
-      setLoading(false);
-      return fallbackData;
+        setLoading(false);
+        return transformedData;
+      } catch (err) {
+        console.error(`Error with proxy ${proxy}:`, err);
+        continue; // Try next proxy
+      }
     }
+
+    // If all proxies fail, use fallback data
+    console.error('All proxies failed, using fallback data');
+    setError('Failed to fetch solar data. Using regional averages.');
+    setIsFallbackData(true);
+    
+    const region = getNigerianRegion(latitude);
+    const fallbackData = getRegionalFallbackData(region, latitude);
+    setLoading(false);
+    return fallbackData;
   };
 
   return { fetchPvgisData, loading, error, isFallbackData };
