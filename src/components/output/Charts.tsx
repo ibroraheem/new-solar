@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Chart, registerables } from 'chart.js';
-import { ChartData, PvgisData, SolarComponents } from '../../types';
+import { Chart, registerables, ChartData as ChartJsData } from 'chart.js';
+import { PvgisData, SolarComponents } from '../../types';
+import { AlertTriangle } from 'lucide-react';
 
 Chart.register(...registerables);
 
@@ -10,6 +11,7 @@ interface ChartsProps {
   worstMonthPvout: number;
   solarComponents: SolarComponents;
   backupHours: number;
+  error: string | null;
 }
 
 const Charts: React.FC<ChartsProps> = ({
@@ -18,6 +20,7 @@ const Charts: React.FC<ChartsProps> = ({
   worstMonthPvout,
   solarComponents,
   backupHours,
+  error,
 }) => {
   const monthlyChartRef = useRef<HTMLCanvasElement>(null);
   const generationChartRef = useRef<HTMLCanvasElement>(null);
@@ -48,7 +51,7 @@ const Charts: React.FC<ChartsProps> = ({
     if (monthlyChartRef.current) {
       const ctx = monthlyChartRef.current.getContext('2d');
       if (ctx) {
-        const monthlyData: ChartData = {
+        const monthlyData: ChartJsData = {
           labels: monthNames,
           datasets: [{
             label: 'Solar Radiation (kWh/m²/day)',
@@ -68,6 +71,7 @@ const Charts: React.FC<ChartsProps> = ({
           data: monthlyData,
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
               legend: {
                 position: 'top',
@@ -107,7 +111,7 @@ const Charts: React.FC<ChartsProps> = ({
           (solarComponents.solarPanels.totalWattage * (month.pvout / 30) * 0.75) / 1000
         );
 
-        const generationData: ChartData = {
+        const generationData: ChartJsData = {
           labels: monthNames,
           datasets: [
             {
@@ -132,6 +136,7 @@ const Charts: React.FC<ChartsProps> = ({
           data: generationData,
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
               legend: {
                 position: 'top',
@@ -162,7 +167,7 @@ const Charts: React.FC<ChartsProps> = ({
         const dod = solarComponents.batteryType === 'Lithium' ? 0.9 : 0.5;
         const actualAutonomyHours = (batteryCapacityKwh * dod * 24) / dailyEnergyDemand;
 
-        const batteryData: ChartData = {
+        const batteryData: ChartJsData = {
           labels: ['Designed', 'Actual'],
           datasets: [{
             label: 'Hours of Autonomy',
@@ -178,13 +183,14 @@ const Charts: React.FC<ChartsProps> = ({
           data: batteryData,
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
               legend: {
                 position: 'top',
               },
               tooltip: {
                 callbacks: {
-                  label: (item) => `${item.dataset.label}: ${Math.round(item.raw)} hours`
+                  label: (item) => `${item.dataset.label}: ${Math.round(item.raw as number)} hours`
                 }
               }
             },
@@ -214,7 +220,7 @@ const Charts: React.FC<ChartsProps> = ({
         const annualDemand = dailyEnergyDemand * 365;
         const excessEnergy = Math.max(0, annualGeneration - annualDemand);
 
-        const utilizationData: ChartData = {
+        const utilizationData: ChartJsData = {
           labels: ['Annual Energy'],
           datasets: [
             {
@@ -239,6 +245,7 @@ const Charts: React.FC<ChartsProps> = ({
           data: utilizationData,
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
               legend: {
                 position: 'top',
@@ -276,12 +283,25 @@ const Charts: React.FC<ChartsProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {error && (
+        <div className="col-span-2 bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2" />
+            <p className="text-yellow-800">
+              {error} The charts below show estimated data based on regional averages.
+            </p>
+          </div>
+        </div>
+      )}
+      
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Monthly Solar Radiation</h3>
         <p className="text-sm text-gray-600 mb-4">
           Shows solar radiation throughout the year. The red bar indicates the worst month used for calculations.
         </p>
-        <canvas ref={monthlyChartRef}></canvas>
+        <div style={{ height: '300px' }}>
+          <canvas ref={monthlyChartRef}></canvas>
+        </div>
       </div>
       
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
@@ -289,7 +309,9 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Compares estimated solar generation with your daily energy needs throughout the year.
         </p>
-        <canvas ref={generationChartRef}></canvas>
+        <div style={{ height: '300px' }}>
+          <canvas ref={generationChartRef}></canvas>
+        </div>
       </div>
       
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
@@ -297,7 +319,9 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Shows the designed backup hours compared to the actual hours of autonomy with the recommended battery.
         </p>
-        <canvas ref={batteryChartRef}></canvas>
+        <div style={{ height: '300px' }}>
+          <canvas ref={batteryChartRef}></canvas>
+        </div>
       </div>
       
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
@@ -305,7 +329,9 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Displays the annual energy used vs excess energy produced by your system.
         </p>
-        <canvas ref={utilizationChartRef}></canvas>
+        <div style={{ height: '300px' }}>
+          <canvas ref={utilizationChartRef}></canvas>
+        </div>
       </div>
     </div>
   );

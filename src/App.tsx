@@ -3,6 +3,7 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import InputSection from './components/input/InputSection';
 import OutputSection from './components/output/OutputSection';
+import Charts from './components/output/Charts';
 import { usePvgisApi } from './hooks/usePvgisApi';
 import { calculateSolarComponents, calculateWorstMonthPvout } from './utils/calculations';
 import { LocationData, PvgisData, SolarComponents, Appliance } from './types';
@@ -148,15 +149,24 @@ function App() {
           )}
           
           {calculationResult && (
-            <OutputSection
-              visible={showResults}
-              dailyEnergyDemand={calculationResult.dailyEnergyDemand}
-              pvgisData={calculationResult.pvoutData}
-              worstMonthPvout={calculationResult.worstMonthPvout}
-              solarComponents={calculationResult.recommendedComponents}
-              backupHours={calculationResult.backupHours}
-              appliances={calculationResult.appliances}
-            />
+            <div className="mt-8">
+              <OutputSection
+                pvgisData={calculationResult.pvoutData}
+                dailyEnergyDemand={calculationResult.dailyEnergyDemand}
+                worstMonthPvout={calculationResult.worstMonthPvout}
+                solarComponents={calculationResult.recommendedComponents}
+                backupHours={calculationResult.backupHours}
+                appliances={calculationResult.appliances}
+              />
+              <Charts
+                pvgisData={calculationResult.pvoutData}
+                dailyEnergyDemand={calculationResult.dailyEnergyDemand}
+                worstMonthPvout={calculationResult.worstMonthPvout}
+                solarComponents={calculationResult.recommendedComponents}
+                backupHours={calculationResult.backupHours}
+                error={error}
+              />
+            </div>
           )}
         </div>
         
