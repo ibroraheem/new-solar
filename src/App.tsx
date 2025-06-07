@@ -67,7 +67,7 @@ function App() {
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-green-600 to-green-500 text-white py-16">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">SolarMate Nigeria</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">SolarMate</h1>
             <p className="text-xl md:text-2xl mb-8">Smart Solar Sizing for Nigerian Homes & Businesses</p>
             <a
               href="#calculator"
@@ -167,7 +167,7 @@ function App() {
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-900">About SolarMate</h2>
                 <p className="mt-4 text-gray-600">
-                  Designed specifically for Nigerian homes and businesses
+                  Designed specifically for the Nigerian market
                 </p>
               </div>
               
