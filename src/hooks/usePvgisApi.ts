@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { PvgisData } from '../types';
 import { NigerianRegion, getNigerianRegion } from '../utils/calculations';
 
-interface MonthlyData {
+interface MonthlyDataPoint {
   month: number;
   pvout: number;
-  eday: number; // Daily energy output for 1kWp
+  eday: number;
 }
 
 interface PvgisMonthlyData {
@@ -14,33 +14,6 @@ interface PvgisMonthlyData {
 }
 
 interface PvgisResponse {
-  inputs: {
-    location: {
-      latitude: number;
-      longitude: number;
-    };
-    meteo_data: {
-      radiation_db: string;
-      meteo_db: string;
-    };
-    mounting_system: {
-      fixed: {
-        slope: {
-          value: number;
-          optimal: boolean;
-        };
-        azimuth: {
-          value: number;
-          optimal: boolean;
-        };
-      };
-    };
-    pv_module: {
-      technology: string;
-      peak_power: number;
-      system_loss: number;
-    };
-  };
   outputs: {
     monthly: PvgisMonthlyData[];
   };
@@ -131,20 +104,31 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json() as PvgisResponse;
-      
+      const data = await response.json();
+      console.log('PVGIS Response:', data); // Debug log
+
+      // Check if we have the expected data structure
+      if (!data || !data.outputs || !Array.isArray(data.outputs.monthly)) {
+        throw new Error('Invalid PVGIS data structure received');
+      }
+
       // Transform the data to match our PvgisData type
-      const monthlyData = data.outputs.monthly.map((month: PvgisMonthlyData) => ({
-        month: month.month,
-        pvout: month.E_d * 30, // Convert daily to monthly values
-        eday: month.E_d // Store the daily value for 1kWp
-      }));
+      const monthlyData: MonthlyDataPoint[] = data.outputs.monthly.map((month: PvgisMonthlyData) => {
+        if (typeof month.E_d !== 'number') {
+          throw new Error(`Invalid E_d value for month ${month.month}`);
+        }
+        return {
+          month: month.month,
+          pvout: month.E_d * 30, // Convert daily to monthly values
+          eday: month.E_d // Store the daily value for 1kWp
+        };
+      });
 
       // Find the worst daily value (minimum E_day)
       const worstDayPvout = Math.min(...monthlyData.map(month => month.eday));
 
       const transformedData: PvgisData = {
-        monthly: monthlyData.map(({ month, pvout }) => ({ month, pvout })),
+        monthly: monthlyData.map(({ month, pvout }: MonthlyDataPoint) => ({ month, pvout })),
         annual: {
           pvout: data.outputs.monthly.reduce((sum: number, month: PvgisMonthlyData) => sum + month.E_d, 0) * 30 / 12
         },
