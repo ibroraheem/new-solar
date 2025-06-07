@@ -47,6 +47,7 @@ interface PvgisResponse {
 
 // List of proxy servers to try if CORS fails
 const PROXY_SERVERS = [
+  'https://crossorigin.me/',
   'https://cors-anywhere.herokuapp.com/',
   'https://api.allorigins.win/raw?url=',
   'https://api.codetabs.com/v1/proxy?quest='
@@ -126,7 +127,8 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     // Try each proxy server in sequence
     for (const proxy of PROXY_SERVERS) {
       try {
-        const response = await fetch(proxy + encodeURIComponent(pvgisUrl), {
+        console.log(`Trying proxy: ${proxy}`);
+        const response = await fetch(proxy + pvgisUrl, {
           method: 'GET',
           headers: {
             'Accept': 'text/html',
@@ -134,10 +136,12 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
         });
 
         if (!response.ok) {
+          console.log(`Proxy ${proxy} failed with status: ${response.status}`);
           continue; // Try next proxy if this one fails
         }
 
         const text = await response.text();
+        console.log('Response received, parsing data...');
         
         // Parse the HTML table response
         const parser = new DOMParser();
@@ -145,9 +149,11 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
         const table = doc.querySelector('table');
         
         if (!table) {
+          console.log('No table found in response');
           continue; // Try next proxy if no table found
         }
 
+        console.log('Table found, extracting data...');
         // Extract monthly data from the table
         const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header row
         const monthlyData = rows.map((row, index) => {
