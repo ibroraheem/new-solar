@@ -1,14 +1,15 @@
 import { Handler } from '@netlify/functions';
 
-export const handler: Handler = async (event) => {
+const handler: Handler = async (event) => {
   // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Content-Type': 'application/json',
   };
 
-  // Handle preflight requests
+  // Handle OPTIONS request for CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -24,16 +25,14 @@ export const handler: Handler = async (event) => {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Missing required parameters: lat and lon' }),
+        body: JSON.stringify({ error: 'Missing latitude or longitude parameters' }),
       };
     }
 
-    const url = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?` +
-      `lat=${lat}&lon=${lon}` +
-      `&startyear=2023&endyear=2023&outputformat=json` +
-      `&mountingplace=fixed&pvtechchoice=crystSi&peakpower=1&loss=14`;
+    // Use 2020 as the year since it's the latest available in PVGIS
+    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/seriescalc?lat=${lat}&lon=${lon}&startyear=2020&endyear=2020&outputformat=json&mountingplace=fixed&pvtechchoice=crystSi&peakpower=1&loss=14`;
 
-    const response = await fetch(url);
+    const response = await fetch(pvgisUrl);
     const data = await response.json();
 
     return {
@@ -42,14 +41,13 @@ export const handler: Handler = async (event) => {
       body: JSON.stringify(data),
     };
   } catch (error) {
-    console.error('PVGIS proxy error:', error);
+    console.error('Error fetching PVGIS data:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ 
-        error: 'Failed to fetch PVGIS data',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }),
+      body: JSON.stringify({ error: 'Failed to fetch PVGIS data' }),
     };
   }
-}; 
+};
+
+export { handler }; 
