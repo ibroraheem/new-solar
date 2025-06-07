@@ -29,8 +29,8 @@ const handler: Handler = async (event) => {
       };
     }
 
-    // Use 2020 as the year since it's the latest available in PVGIS
-    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/seriescalc?lat=${lat}&lon=${lon}&startyear=2020&endyear=2020&outputformat=json&mountingplace=fixed&pvtechchoice=crystSi&peakpower=1&loss=14`;
+    // Use 'building' for mountingplace as it's more appropriate for residential installations
+    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/seriescalc?lat=${lat}&lon=${lon}&startyear=2020&endyear=2020&outputformat=json&mountingplace=building&pvtechchoice=crystSi&peakpower=1&loss=14`;
 
     const response = await fetch(pvgisUrl);
     const data = await response.json();
