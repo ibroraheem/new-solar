@@ -35,10 +35,29 @@ const handler: Handler = async (event) => {
     const response = await fetch(pvgisUrl);
     const data = await response.json();
 
+    // Extract monthly data and find minimum E_day
+    const monthlyData = data.outputs.monthly;
+    let minEday = Infinity;
+    let minEdayMonth = 0;
+
+    monthlyData.forEach((month: { month: number; E_d: number }) => {
+      if (month.E_d < minEday) {
+        minEday = month.E_d;
+        minEdayMonth = month.month;
+      }
+    });
+
+    // Return both the full data and the minimum E_day info
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        worstMonth: {
+          month: minEdayMonth,
+          E_day: minEday
+        }
+      }),
     };
   } catch (error) {
     console.error('Error fetching PVGIS data:', error);

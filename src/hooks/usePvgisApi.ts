@@ -17,6 +17,10 @@ interface PvgisResponse {
   outputs: {
     monthly: PvgisMonthlyData[];
   };
+  worstMonth: {
+    month: number;
+    E_day: number;
+  };
 }
 
 // Use only crossorigin.me as proxy
@@ -104,7 +108,7 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as PvgisResponse;
       console.log('PVGIS Response:', data); // Debug log
 
       // Check if we have the expected data structure
@@ -124,9 +128,6 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
         };
       });
 
-      // Find the worst daily value (minimum E_day)
-      const worstDayPvout = Math.min(...monthlyData.map(month => month.eday));
-
       const transformedData: PvgisData = {
         monthly: monthlyData.map(({ month, pvout }: MonthlyDataPoint) => ({ month, pvout })),
         annual: {
@@ -136,7 +137,7 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
           latitude,
           longitude,
           elevation: 0,
-          worstDayPvout // This is the minimum E_day for 1kWp
+          worstDayPvout: data.worstMonth.E_day // Use the minimum E_day from the API
         }
       };
 
