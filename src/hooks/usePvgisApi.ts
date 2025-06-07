@@ -47,7 +47,6 @@ interface PvgisResponse {
 
 // List of proxy servers to try if CORS fails
 const PROXY_SERVERS = [
-  'https://crossorigin.me/',
   'https://cors-anywhere.herokuapp.com/',
   'https://api.allorigins.win/raw?url=',
   'https://api.codetabs.com/v1/proxy?quest='
@@ -128,11 +127,15 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     for (const proxy of PROXY_SERVERS) {
       try {
         console.log(`Trying proxy: ${proxy}`);
-        const response = await fetch(proxy + pvgisUrl, {
+        const response = await fetch(proxy + encodeURIComponent(pvgisUrl), {
           method: 'GET',
           headers: {
             'Accept': 'text/html',
+            'Origin': 'https://solarmate.netlify.app',
+            'X-Requested-With': 'XMLHttpRequest'
           },
+          mode: 'cors',
+          credentials: 'omit'
         });
 
         if (!response.ok) {
