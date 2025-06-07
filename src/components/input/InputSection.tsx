@@ -24,11 +24,28 @@ const InputSection: React.FC<InputSectionProps> = ({ onCalculate }) => {
   const [backupHours, setBackupHours] = useState(8);
   const [isReadyToCalculate, setIsReadyToCalculate] = useState(false);
 
+  // Ensure backup hours stays within valid range
+  const handleBackupHoursChange = (hours: number) => {
+    const validHours = Math.max(8, Math.min(24, hours));
+    setBackupHours(validHours);
+  };
+
   // Calculate critical load energy
   const criticalLoadEnergy = appliances
     .filter((a) => a.isSelected && a.isCritical)
     .reduce((sum, appliance) => {
-      return sum + (appliance.watts * appliance.quantity * appliance.hoursPerDay) / 1000;
+      const hoursPerDay = appliance.timeSlots
+        .filter(slot => slot.selected)
+        .reduce((hours, slot) => {
+          if (slot.durationMinutes) {
+            return hours + (slot.durationMinutes / 60);
+          }
+          const slotHours = slot.end > slot.start 
+            ? slot.end - slot.start 
+            : (24 - slot.start) + slot.end;
+          return hours + slotHours;
+        }, 0);
+      return sum + (appliance.watts * appliance.quantity * hoursPerDay) / 1000;
     }, 0);
 
   // Check if ready to calculate
@@ -116,7 +133,7 @@ const InputSection: React.FC<InputSectionProps> = ({ onCalculate }) => {
           
           <BackupDurationInput
             backupHours={backupHours}
-            onChange={setBackupHours}
+            onChange={handleBackupHoursChange}
           />
           
           {/* Calculate Button */}

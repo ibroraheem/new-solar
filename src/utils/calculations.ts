@@ -95,16 +95,11 @@ export function calculateNightLoad(appliances: Appliance[]): number {
 export function calculateWorstMonthPvout(pvgisData: PvgisData | null): number {
   if (!pvgisData?.monthly?.length) return 3.3; // Default worst month value
   
-  interface MonthlyData {
-    month: number;
-    pvout: number;
-  }
-  
-  const worstMonth = pvgisData.monthly.reduce((worst: MonthlyData, month: MonthlyData) => 
+  const worstMonth = pvgisData.monthly.reduce((worst, month) => 
     month.pvout < worst.pvout ? month : worst
   );
   
-  return worstMonth.pvout / 30;
+  return worstMonth.pvout / 30; // Convert monthly value to daily
 }
 
 function selectInverter(

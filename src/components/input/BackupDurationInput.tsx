@@ -7,6 +7,16 @@ interface BackupDurationInputProps {
 }
 
 const BackupDurationInput: React.FC<BackupDurationInputProps> = ({ backupHours, onChange }) => {
+  // Ensure backupHours is within valid range
+  const validBackupHours = Math.max(8, Math.min(24, backupHours));
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    // Ensure the value is within the valid range
+    const validValue = Math.max(8, Math.min(24, value));
+    onChange(validValue);
+  };
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
@@ -23,10 +33,10 @@ const BackupDurationInput: React.FC<BackupDurationInputProps> = ({ backupHours, 
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
             <Battery className="h-5 w-5 text-green-500 mr-2" />
-            <span className="font-medium">{backupHours} Hours</span>
+            <span className="font-medium">{validBackupHours} Hours</span>
           </div>
           <span className="text-sm text-gray-500">
-            {getBackupDescription(backupHours)}
+            {getBackupDescription(validBackupHours)}
           </span>
         </div>
         
@@ -35,8 +45,8 @@ const BackupDurationInput: React.FC<BackupDurationInputProps> = ({ backupHours, 
           min="8"
           max="24"
           step="4"
-          value={backupHours}
-          onChange={(e) => onChange(parseInt(e.target.value))}
+          value={validBackupHours}
+          onChange={handleChange}
           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-500"
         />
         
@@ -49,8 +59,8 @@ const BackupDurationInput: React.FC<BackupDurationInputProps> = ({ backupHours, 
         </div>
       </div>
       
-      <div className="mt-2 space-y-2 text-sm text-gray-600">
-        <p>{getBackupRecommendation(backupHours)}</p>
+      <div className="mt-4 text-sm text-gray-600">
+        <p>{getBackupRecommendation(validBackupHours)}</p>
         <p className="text-green-600">
           Note: Nigeria receives consistent sunlight year-round, with 3-6 hours of peak sun daily. 
           Our calculations are based on the worst-month scenario to ensure reliability.

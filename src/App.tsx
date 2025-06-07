@@ -17,7 +17,7 @@ function App() {
     appliances: Appliance[];
   } | null>(null);
   const [showResults, setShowResults] = useState(false);
-  const { fetchPvgisData, isLoading, error } = usePvgisApi();
+  const { fetchPvgisData, loading, error } = usePvgisApi();
 
   const handleCalculate = async (params: {
     dailyEnergyDemand: number;
@@ -28,12 +28,12 @@ function App() {
     setShowResults(false);
     
     try {
-      const pvgisData = await fetchPvgisData(params.location);
+      const pvgisData = await fetchPvgisData(params.location.latitude, params.location.longitude);
       const worstMonthPvout = calculateWorstMonthPvout(pvgisData);
       
       const recommendedComponents = calculateSolarComponents(
         params.dailyEnergyDemand,
-        params.backupHours / 24, // Convert hours to days for calculation
+        params.backupHours,
         worstMonthPvout
       );
       
@@ -121,7 +121,7 @@ function App() {
         
         {/* Results Section */}
         <div id="results">
-          {isLoading && (
+          {loading && (
             <div className="bg-gray-50 py-10 text-center">
               <div className="container mx-auto px-4">
                 <div className="animate-pulse">

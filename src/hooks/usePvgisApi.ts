@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { LocationData, PvgisData } from '../types';
+import { useState } from 'react';
+import { PvgisData } from '../types';
 import { NigerianRegion, getNigerianRegion } from '../utils/calculations';
 
 interface MonthlyData {
@@ -108,100 +108,77 @@ const NIGERIAN_SOLAR_DATA = {
 };
 
 interface UsePvgisApiReturn {
-  pvgisData: PvgisResponse | null;
+  fetchPvgisData: (latitude: number, longitude: number) => Promise<PvgisData>;
   loading: boolean;
   error: string | null;
-  fetchPvgisData: (latitude: number, longitude: number) => Promise<void>;
 }
 
 export const usePvgisApi = (): UsePvgisApiReturn => {
-  const [pvgisData, setPvgisData] = useState<PvgisResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getNigerianRegion = (latitude: number): 'north' | 'middle' | 'south' => {
-    if (latitude > 10) return 'north';
-    if (latitude > 8) return 'middle';
-    return 'south';
-  };
-
-  const fetchPvgisData = useCallback(async (latitude: number, longitude: number) => {
+  const fetchPvgisData = async (latitude: number, longitude: number): Promise<PvgisData> => {
     setLoading(true);
     setError(null);
 
     try {
-      // First try the Netlify Functions proxy
-      const proxyUrl = `/api/pvgis-proxy?lat=${latitude}&lon=${longitude}`;
-      const response = await fetch(proxyUrl);
+      // First try with CORS mode
+      const response = await fetch(
+        `/api/pvgis-proxy?lat=${latitude}&lon=${longitude}`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      setPvgisData(data);
-    } catch (error) {
-      console.error('Error fetching PVGIS data:', error);
-      setError('Failed to fetch solar data. Using regional averages instead.');
-      
-      // Fallback to Nigerian regional data
-      const region = getNigerianRegion(latitude);
-      const fallbackData = getFallbackData(region);
-      setPvgisData(fallbackData);
-    } finally {
       setLoading(false);
+      return data;
+    } catch (err) {
+      console.error('Error fetching PVGIS data:', err);
+      setError('Failed to fetch solar data. Using regional averages.');
+      
+      // Fallback to regional averages
+      const region = getNigerianRegion(latitude);
+      const fallbackData = getRegionalFallbackData(region, latitude);
+      setLoading(false);
+      return fallbackData;
     }
-  }, []);
+  };
 
-  return { pvgisData, loading, error, fetchPvgisData };
+  return { fetchPvgisData, loading, error };
 };
 
 // Fallback data for Nigerian regions
-const getFallbackData = (region: NigerianRegion): PvgisResponse => {
-  const monthlyData: Record<NigerianRegion, number[]> = {
-    'north': [5.2, 5.8, 6.2, 6.5, 6.3, 5.8, 5.2, 5.0, 5.5, 6.0, 5.8, 5.3],
-    'middle': [5.0, 5.5, 5.9, 6.2, 6.0, 5.5, 5.0, 4.8, 5.2, 5.7, 5.5, 5.0],
-    'south': [4.8, 5.2, 5.5, 5.8, 5.6, 5.2, 4.8, 4.6, 5.0, 5.4, 5.2, 4.8]
+const getRegionalFallbackData = (region: NigerianRegion, latitude: number): PvgisData => {
+  const monthlyData = {
+    north: [5.2, 5.8, 6.2, 6.5, 6.3, 5.8, 5.2, 5.0, 5.5, 5.8, 5.5, 5.0],
+    middle: [4.8, 5.2, 5.5, 5.8, 5.5, 5.0, 4.5, 4.2, 4.8, 5.0, 4.8, 4.5],
+    south: [4.2, 4.5, 4.8, 5.0, 4.8, 4.5, 4.0, 3.8, 4.2, 4.5, 4.2, 4.0],
   };
 
+  const pvoutValues = monthlyData[region];
+  const worstDayPvout = Math.min(...pvoutValues);
+
   return {
-    inputs: {
-      location: {
-        latitude: 0,
-        longitude: 0
-      },
-      meteo_data: {
-        radiation_db: "PVGIS-SARAH2",
-        meteo_db: "ERA5"
-      },
-      mounting_system: {
-        fixed: {
-          slope: {
-            value: 0,
-            optimal: false
-          },
-          azimuth: {
-            value: 0,
-            optimal: false
-          }
-        }
-      },
-      pv_module: {
-        technology: "crystSi",
-        peak_power: 1,
-        system_loss: 14
-      }
+    monthly: pvoutValues.map((value: number, index: number) => ({
+      month: index + 1,
+      pvout: value * 30 // Convert daily to monthly values
+    })),
+    annual: {
+      pvout: pvoutValues.reduce((sum, val) => sum + val, 0) * 30 / 12 // Average monthly value
     },
-    outputs: {
-      monthly: monthlyData[region].map((value: number, index: number) => ({
-        month: index + 1,
-        H_d: value,
-        H_i: value * 1.1,
-        H_kt: 0.5,
-        T2m: 25,
-        WS10m: 2,
-        Int: 0
-      }))
+    meta: {
+      latitude,
+      longitude: 0,
+      elevation: 0,
+      worstDayPvout
     }
   };
 };
