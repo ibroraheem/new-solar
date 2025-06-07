@@ -196,10 +196,6 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, dailyEnergy
                   <td className="py-2 font-medium text-gray-900">{components.cables.acSize} mm²</td>
                 </tr>
                 <tr>
-                  <td className="py-2 text-gray-600">DC Breaker Rating:</td>
-                  <td className="py-2 font-medium text-gray-900">{components.breakers.dcRating}A</td>
-                </tr>
-                <tr>
                   <td className="py-2 text-gray-600">AC Breaker Rating:</td>
                   <td className="py-2 font-medium text-gray-900">{components.breakers.acRating}A</td>
                 </tr>

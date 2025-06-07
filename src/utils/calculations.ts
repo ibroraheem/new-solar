@@ -143,8 +143,9 @@ function selectBattery(
   parallel: number;
   totalBatteries: number;
 } {
-  // Add 30% buffer and account for efficiency losses
-  const energyNeeded = (dailyEnergyDemand * backupHours * 1.3) / EFFICIENCY_FACTOR;
+  // Calculate hourly demand and add 30% buffer for efficiency losses
+  const hourlyDemand = dailyEnergyDemand / 24; // Convert daily to hourly
+  const energyNeeded = (hourlyDemand * backupHours * 1.3) / EFFICIENCY_FACTOR;
 
   if (systemVoltage === 12) {
     const batteryKwh = BATTERY_CONFIGS.tubular.kwh;
@@ -262,7 +263,6 @@ export function calculateSolarComponents(
         acSize: maxAcCurrent <= 32 ? 6 : maxAcCurrent <= 50 ? 10 : 16
       },
       breakers: {
-        dcRating: Math.ceil(maxDcCurrent),
         acRating: Math.ceil(maxAcCurrent)
       },
       otherComponents: {

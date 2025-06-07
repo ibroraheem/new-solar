@@ -54,10 +54,10 @@ const Charts: React.FC<ChartsProps> = ({
             label: 'Solar Radiation (kWh/m²/day)',
             data: pvgisData.monthly.map(month => month.pvout / 30), // Convert back to daily values
             backgroundColor: pvgisData.monthly.map(month => 
-              month.pvout === worstMonthPvout ? 'rgba(239, 68, 68, 0.7)' : 'rgba(245, 158, 11, 0.7)'
+              month.pvout / 30 === worstMonthPvout ? 'rgba(239, 68, 68, 0.7)' : 'rgba(245, 158, 11, 0.7)'
             ),
             borderColor: pvgisData.monthly.map(month => 
-              month.pvout === worstMonthPvout ? 'rgb(239, 68, 68)' : 'rgb(245, 158, 11)'
+              month.pvout / 30 === worstMonthPvout ? 'rgb(239, 68, 68)' : 'rgb(245, 158, 11)'
             ),
             borderWidth: 1
           }]
@@ -78,7 +78,7 @@ const Charts: React.FC<ChartsProps> = ({
                   label: (item) => `Solar Radiation: ${item.raw} kWh/m²/day`,
                   footer: (items) => {
                     const index = items[0].dataIndex;
-                    const isWorstMonth = pvgisData.monthly[index].pvout === worstMonthPvout;
+                    const isWorstMonth = pvgisData.monthly[index].pvout / 30 === worstMonthPvout;
                     return isWorstMonth ? 'Worst Month (Used for Sizing)' : '';
                   }
                 }

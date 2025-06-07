@@ -73,7 +73,6 @@ export interface SolarComponents {
   };
   breakers: {
     acRating: number;
-    dcRating: number;
   };
   otherComponents: {
     spd: boolean;
