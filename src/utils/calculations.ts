@@ -4,7 +4,7 @@ import { PvgisData, Appliance, SolarComponents, TimeSlot } from '../types';
 const MAX_SYSTEM_SIZE_KWP = 12.6;
 const MIN_DAILY_ENERGY = 0.1; // kWh
 const MAX_DAILY_ENERGY = 100; // kWh
-const MIN_BACKUP_HOURS = 1;
+const MIN_BACKUP_HOURS = 8;  // Updated to match UI constraints
 const MAX_BACKUP_HOURS = 24;
 const EFFICIENCY_FACTOR = 0.85; // 85% efficiency for battery calculations
 
