@@ -111,15 +111,18 @@ interface UsePvgisApiReturn {
   fetchPvgisData: (latitude: number, longitude: number) => Promise<PvgisData>;
   loading: boolean;
   error: string | null;
+  isFallbackData: boolean;
 }
 
 export const usePvgisApi = (): UsePvgisApiReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFallbackData, setIsFallbackData] = useState(false);
 
   const fetchPvgisData = async (latitude: number, longitude: number): Promise<PvgisData> => {
     setLoading(true);
     setError(null);
+    setIsFallbackData(false);
 
     try {
       // First try with CORS mode
@@ -143,6 +146,7 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     } catch (err) {
       console.error('Error fetching PVGIS data:', err);
       setError('Failed to fetch solar data. Using regional averages.');
+      setIsFallbackData(true);
       
       // Fallback to regional averages
       const region = getNigerianRegion(latitude);
@@ -152,7 +156,7 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     }
   };
 
-  return { fetchPvgisData, loading, error };
+  return { fetchPvgisData, loading, error, isFallbackData };
 };
 
 // Fallback data for Nigerian regions
@@ -178,8 +182,7 @@ const getRegionalFallbackData = (region: NigerianRegion, latitude: number): Pvgi
       latitude,
       longitude: 0,
       elevation: 0,
-      worstDayPvout,
-      isFallbackData: true
+      worstDayPvout
     }
   };
 };

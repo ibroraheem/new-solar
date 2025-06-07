@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import InputSection from './components/input/InputSection';
@@ -6,7 +6,6 @@ import OutputSection from './components/output/OutputSection';
 import { usePvgisApi } from './hooks/usePvgisApi';
 import { calculateSolarComponents, calculateWorstMonthPvout } from './utils/calculations';
 import { LocationData, PvgisData, SolarComponents, Appliance } from './types';
-import Charts from './components/output/Charts';
 
 function App() {
   const [calculationResult, setCalculationResult] = useState<{
@@ -19,8 +18,7 @@ function App() {
     isFallbackData: boolean;
   } | null>(null);
   const [showResults, setShowResults] = useState(false);
-  const { fetchPvgisData, loading, error } = usePvgisApi();
-  const resultsRef = useRef<HTMLDivElement>(null);
+  const { fetchPvgisData, loading, error, isFallbackData } = usePvgisApi();
 
   const handleCalculate = async (params: {
     dailyEnergyDemand: number;
@@ -47,7 +45,7 @@ function App() {
         recommendedComponents,
         backupHours: params.backupHours,
         appliances: params.appliances,
-        isFallbackData: pvgisData.meta?.isFallbackData || false
+        isFallbackData
       });
       
       setShowResults(true);
@@ -152,30 +150,15 @@ function App() {
           )}
           
           {calculationResult && (
-            <div ref={resultsRef} className="py-12 bg-gray-50">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl font-bold text-gray-900">
-                    Your Solar System Design
-                  </h2>
-                  <p className="mt-4 text-lg text-gray-600">
-                    Based on your location and requirements, here's your recommended solar system configuration.
-                  </p>
-                </div>
-
-                <div className="space-y-12">
-                  {/* Charts */}
-                  <Charts
-                    pvgisData={calculationResult.pvoutData}
-                    dailyEnergyDemand={calculationResult.dailyEnergyDemand}
-                    worstMonthPvout={calculationResult.worstMonthPvout}
-                    solarComponents={calculationResult.recommendedComponents}
-                    backupHours={calculationResult.backupHours}
-                    isFallbackData={calculationResult.isFallbackData}
-                  />
-                </div>
-              </div>
-            </div>
+            <OutputSection
+              visible={showResults}
+              dailyEnergyDemand={calculationResult.dailyEnergyDemand}
+              pvgisData={calculationResult.pvoutData}
+              worstMonthPvout={calculationResult.worstMonthPvout}
+              solarComponents={calculationResult.recommendedComponents}
+              backupHours={calculationResult.backupHours}
+              appliances={calculationResult.appliances}
+            />
           )}
         </div>
         

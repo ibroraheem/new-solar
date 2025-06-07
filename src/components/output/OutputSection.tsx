@@ -17,6 +17,7 @@ interface OutputSectionProps {
   worstMonthPvout: number;
   solarComponents: SolarComponents;
   backupHours: number;
+  isFallbackData: boolean;
 }
 
 const OutputSection: React.FC<OutputSectionProps> = ({
@@ -27,6 +28,7 @@ const OutputSection: React.FC<OutputSectionProps> = ({
   worstMonthPvout,
   solarComponents,
   backupHours,
+  isFallbackData,
 }) => {
   if (!visible) return null;
 
@@ -45,6 +47,11 @@ const OutputSection: React.FC<OutputSectionProps> = ({
               Based on your location and energy needs, here's your optimized
               solar system
             </p>
+            {isFallbackData && (
+              <div className="mt-4 bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded">
+                <strong>Note:</strong> Using estimated solar radiation data for your region. For more accurate results, please try again later.
+              </div>
+            )}
           </div>
 
           {solarComponents.solarPanels.totalWattage > 12600 && (

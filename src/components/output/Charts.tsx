@@ -10,7 +10,6 @@ interface ChartsProps {
   worstMonthPvout: number;
   solarComponents: SolarComponents;
   backupHours: number;
-  isFallbackData?: boolean;
 }
 
 const Charts: React.FC<ChartsProps> = ({
@@ -19,7 +18,6 @@ const Charts: React.FC<ChartsProps> = ({
   worstMonthPvout,
   solarComponents,
   backupHours,
-  isFallbackData = false,
 }) => {
   const monthlyChartRef = useRef<HTMLCanvasElement>(null);
   const generationChartRef = useRef<HTMLCanvasElement>(null);
@@ -78,7 +76,7 @@ const Charts: React.FC<ChartsProps> = ({
               tooltip: {
                 callbacks: {
                   title: (items) => monthNames[items[0].dataIndex],
-                  label: (item) => `Solar Radiation: ${item.raw} kWh/m²/day`,
+                  label: (item) => `Solar Radiation: ${(item.raw as number).toFixed(2)} kWh/m²/day`,
                   footer: (items) => {
                     const index = items[0].dataIndex;
                     const isWorstMonth = pvgisData.monthly[index].pvout / 30 === worstMonthPvout;
@@ -139,6 +137,11 @@ const Charts: React.FC<ChartsProps> = ({
             plugins: {
               legend: {
                 position: 'top',
+              },
+              tooltip: {
+                callbacks: {
+                  label: (item) => `${item.dataset.label}: ${(item.raw as number).toFixed(2)} kWh/day`
+                }
               }
             },
             scales: {
@@ -189,7 +192,7 @@ const Charts: React.FC<ChartsProps> = ({
               },
               tooltip: {
                 callbacks: {
-                  label: (item) => `${item.dataset.label}: ${Math.round(item.raw as number)} hours`
+                  label: (item) => `${item.dataset.label}: ${(item.raw as number).toFixed(1)} hours`
                 }
               }
             },
@@ -274,37 +277,19 @@ const Charts: React.FC<ChartsProps> = ({
       }
     }
 
-    // Cleanup on unmount
     return () => {
       destroyCharts();
     };
   }, [pvgisData, dailyEnergyDemand, worstMonthPvout, solarComponents, backupHours]);
 
-  if (!pvgisData || !pvgisData.monthly) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-600">No data available to display charts.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      {isFallbackData && (
-        <div className="col-span-2 bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <p className="text-yellow-800">
-            <span className="font-semibold">Note:</span> Using estimated solar radiation data based on regional averages. 
-            For more accurate results, please ensure your location is correctly set.
-          </p>
-        </div>
-      )}
-      
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Monthly Solar Radiation</h3>
         <p className="text-sm text-gray-600 mb-4">
           Shows solar radiation throughout the year. The red bar indicates the worst month used for calculations.
         </p>
-        <div style={{ height: '300px', position: 'relative' }}>
+        <div style={{ height: '300px' }}>
           <canvas ref={monthlyChartRef}></canvas>
         </div>
       </div>
@@ -314,7 +299,7 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Compares estimated solar generation with your daily energy needs throughout the year.
         </p>
-        <div style={{ height: '300px', position: 'relative' }}>
+        <div style={{ height: '300px' }}>
           <canvas ref={generationChartRef}></canvas>
         </div>
       </div>
@@ -324,7 +309,7 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Shows the designed backup hours compared to the actual hours of autonomy with the recommended battery.
         </p>
-        <div style={{ height: '300px', position: 'relative' }}>
+        <div style={{ height: '300px' }}>
           <canvas ref={batteryChartRef}></canvas>
         </div>
       </div>
@@ -334,7 +319,7 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Displays the annual energy used vs excess energy produced by your system.
         </p>
-        <div style={{ height: '300px', position: 'relative' }}>
+        <div style={{ height: '300px' }}>
           <canvas ref={utilizationChartRef}></canvas>
         </div>
       </div>
