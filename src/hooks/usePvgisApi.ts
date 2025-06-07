@@ -178,7 +178,8 @@ const getRegionalFallbackData = (region: NigerianRegion, latitude: number): Pvgi
       latitude,
       longitude: 0,
       elevation: 0,
-      worstDayPvout
+      worstDayPvout,
+      isFallbackData: true
     }
   };
 };

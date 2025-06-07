@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Chart, registerables, ChartData as ChartJsData } from 'chart.js';
 import { PvgisData, SolarComponents } from '../../types';
-import { AlertTriangle } from 'lucide-react';
 
 Chart.register(...registerables);
 
@@ -11,7 +10,7 @@ interface ChartsProps {
   worstMonthPvout: number;
   solarComponents: SolarComponents;
   backupHours: number;
-  error: string | null;
+  isFallbackData?: boolean;
 }
 
 const Charts: React.FC<ChartsProps> = ({
@@ -20,7 +19,7 @@ const Charts: React.FC<ChartsProps> = ({
   worstMonthPvout,
   solarComponents,
   backupHours,
-  error,
+  isFallbackData = false,
 }) => {
   const monthlyChartRef = useRef<HTMLCanvasElement>(null);
   const generationChartRef = useRef<HTMLCanvasElement>(null);
@@ -281,16 +280,22 @@ const Charts: React.FC<ChartsProps> = ({
     };
   }, [pvgisData, dailyEnergyDemand, worstMonthPvout, solarComponents, backupHours]);
 
+  if (!pvgisData || !pvgisData.monthly) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">No data available to display charts.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      {error && (
+      {isFallbackData && (
         <div className="col-span-2 bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <div className="flex items-center">
-            <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2" />
-            <p className="text-yellow-800">
-              {error} The charts below show estimated data based on regional averages.
-            </p>
-          </div>
+          <p className="text-yellow-800">
+            <span className="font-semibold">Note:</span> Using estimated solar radiation data based on regional averages. 
+            For more accurate results, please ensure your location is correctly set.
+          </p>
         </div>
       )}
       
@@ -299,7 +304,7 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Shows solar radiation throughout the year. The red bar indicates the worst month used for calculations.
         </p>
-        <div style={{ height: '300px' }}>
+        <div style={{ height: '300px', position: 'relative' }}>
           <canvas ref={monthlyChartRef}></canvas>
         </div>
       </div>
@@ -309,7 +314,7 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Compares estimated solar generation with your daily energy needs throughout the year.
         </p>
-        <div style={{ height: '300px' }}>
+        <div style={{ height: '300px', position: 'relative' }}>
           <canvas ref={generationChartRef}></canvas>
         </div>
       </div>
@@ -319,7 +324,7 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Shows the designed backup hours compared to the actual hours of autonomy with the recommended battery.
         </p>
-        <div style={{ height: '300px' }}>
+        <div style={{ height: '300px', position: 'relative' }}>
           <canvas ref={batteryChartRef}></canvas>
         </div>
       </div>
@@ -329,7 +334,7 @@ const Charts: React.FC<ChartsProps> = ({
         <p className="text-sm text-gray-600 mb-4">
           Displays the annual energy used vs excess energy produced by your system.
         </p>
-        <div style={{ height: '300px' }}>
+        <div style={{ height: '300px', position: 'relative' }}>
           <canvas ref={utilizationChartRef}></canvas>
         </div>
       </div>
