@@ -133,6 +133,7 @@ const OutputSection: React.FC<OutputSectionProps> = ({
             worstMonthPvout={worstMonthPvout}
             solarComponents={solarComponents}
             backupHours={backupHours}
+            isFallbackData={isFallbackData}
           />
 
           {/* Component Table */}

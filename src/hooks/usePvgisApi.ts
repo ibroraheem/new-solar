@@ -127,7 +127,7 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     try {
       // First try with CORS mode
       const response = await fetch(
-        `/api/pvgis-proxy?lat=${latitude}&lon=${longitude}`,
+        `/pvgis/seriescalc?lat=${latitude}&lon=${longitude}&startyear=2023&endyear=2023&outputformat=json&mountingplace=fixed&pvtechchoice=crystSi&peakpower=1&loss=14`,
         {
           method: 'GET',
           headers: {
@@ -141,8 +141,26 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
       }
 
       const data = await response.json();
+      
+      // Transform the PVGIS response to match our PvgisData type
+      const transformedData: PvgisData = {
+        monthly: data.outputs.monthly.map((month: any) => ({
+          month: month.month,
+          pvout: month.H_d * 30 // Convert daily to monthly values
+        })),
+        annual: {
+          pvout: data.outputs.monthly.reduce((sum: number, month: any) => sum + month.H_d, 0) * 30 / 12
+        },
+        meta: {
+          latitude: data.inputs.location.latitude,
+          longitude: data.inputs.location.longitude,
+          elevation: 0,
+          worstDayPvout: Math.min(...data.outputs.monthly.map((month: any) => month.H_d))
+        }
+      };
+
       setLoading(false);
-      return data;
+      return transformedData;
     } catch (err) {
       console.error('Error fetching PVGIS data:', err);
       setError('Failed to fetch solar data. Using regional averages.');

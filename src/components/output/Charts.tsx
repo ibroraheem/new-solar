@@ -10,6 +10,7 @@ interface ChartsProps {
   worstMonthPvout: number;
   solarComponents: SolarComponents;
   backupHours: number;
+  isFallbackData: boolean;
 }
 
 const Charts: React.FC<ChartsProps> = ({
@@ -18,6 +19,7 @@ const Charts: React.FC<ChartsProps> = ({
   worstMonthPvout,
   solarComponents,
   backupHours,
+  isFallbackData,
 }) => {
   const monthlyChartRef = useRef<HTMLCanvasElement>(null);
   const generationChartRef = useRef<HTMLCanvasElement>(null);
@@ -280,7 +282,7 @@ const Charts: React.FC<ChartsProps> = ({
     return () => {
       destroyCharts();
     };
-  }, [pvgisData, dailyEnergyDemand, worstMonthPvout, solarComponents, backupHours]);
+  }, [pvgisData, dailyEnergyDemand, worstMonthPvout, solarComponents, backupHours, isFallbackData]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -288,6 +290,7 @@ const Charts: React.FC<ChartsProps> = ({
         <h3 className="text-lg font-medium text-gray-900 mb-2">Monthly Solar Radiation</h3>
         <p className="text-sm text-gray-600 mb-4">
           Shows solar radiation throughout the year. The red bar indicates the worst month used for calculations.
+          {isFallbackData && <span className="text-yellow-600"> (Using estimated data)</span>}
         </p>
         <div style={{ height: '300px' }}>
           <canvas ref={monthlyChartRef}></canvas>
@@ -298,6 +301,7 @@ const Charts: React.FC<ChartsProps> = ({
         <h3 className="text-lg font-medium text-gray-900 mb-2">Solar Generation vs Energy Demand</h3>
         <p className="text-sm text-gray-600 mb-4">
           Compares estimated solar generation with your daily energy needs throughout the year.
+          {isFallbackData && <span className="text-yellow-600"> (Using estimated data)</span>}
         </p>
         <div style={{ height: '300px' }}>
           <canvas ref={generationChartRef}></canvas>
@@ -318,6 +322,7 @@ const Charts: React.FC<ChartsProps> = ({
         <h3 className="text-lg font-medium text-gray-900 mb-2">System Utilization</h3>
         <p className="text-sm text-gray-600 mb-4">
           Displays the annual energy used vs excess energy produced by your system.
+          {isFallbackData && <span className="text-yellow-600"> (Using estimated data)</span>}
         </p>
         <div style={{ height: '300px' }}>
           <canvas ref={utilizationChartRef}></canvas>
