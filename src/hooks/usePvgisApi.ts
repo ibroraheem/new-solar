@@ -5,6 +5,7 @@ import { NigerianRegion, getNigerianRegion } from '../utils/calculations';
 interface MonthlyData {
   month: number;
   pvout: number;
+  eday: number; // Daily energy output for 1kWp
 }
 
 interface PvgisResponse {
@@ -38,12 +39,8 @@ interface PvgisResponse {
   outputs: {
     monthly: {
       month: number;
-      H_d: number;
-      H_i: number;
-      H_kt: number;
-      T2m: number;
-      WS10m: number;
-      Int: number;
+      E_d: number; // Daily energy output
+      H_d: number; // Daily radiation
     }[];
   };
 }
@@ -55,54 +52,54 @@ const PROXY_SERVERS = [
   'https://api.codetabs.com/v1/proxy?quest='
 ];
 
-// Fallback data for Nigerian regions
+// Fallback data for Nigerian regions (E_day values for 1kWp)
 const NIGERIAN_SOLAR_DATA = {
   north: {
     monthly: [
-      { month: 1, pvout: 4.8 },
-      { month: 2, pvout: 5.1 },
-      { month: 3, pvout: 5.3 },
-      { month: 4, pvout: 5.2 },
-      { month: 5, pvout: 5.0 },
-      { month: 6, pvout: 4.7 },
-      { month: 7, pvout: 4.5 },
-      { month: 8, pvout: 4.3 },
-      { month: 9, pvout: 4.8 },
-      { month: 10, pvout: 5.0 },
-      { month: 11, pvout: 5.2 },
-      { month: 12, pvout: 5.1 }
+      { month: 1, eday: 4.8 },
+      { month: 2, eday: 5.1 },
+      { month: 3, eday: 5.3 },
+      { month: 4, eday: 5.2 },
+      { month: 5, eday: 5.0 },
+      { month: 6, eday: 4.7 },
+      { month: 7, eday: 4.5 },
+      { month: 8, eday: 4.3 },
+      { month: 9, eday: 4.8 },
+      { month: 10, eday: 5.0 },
+      { month: 11, eday: 5.2 },
+      { month: 12, eday: 5.1 }
     ]
   },
   middle: {
     monthly: [
-      { month: 1, pvout: 4.4 },
-      { month: 2, pvout: 4.6 },
-      { month: 3, pvout: 4.5 },
-      { month: 4, pvout: 4.5 },
-      { month: 5, pvout: 4.2 },
-      { month: 6, pvout: 3.9 },
-      { month: 7, pvout: 3.6 },
-      { month: 8, pvout: 3.3 },
-      { month: 9, pvout: 3.7 },
-      { month: 10, pvout: 4.0 },
-      { month: 11, pvout: 4.4 },
-      { month: 12, pvout: 4.4 }
+      { month: 1, eday: 4.4 },
+      { month: 2, eday: 4.6 },
+      { month: 3, eday: 4.5 },
+      { month: 4, eday: 4.5 },
+      { month: 5, eday: 4.2 },
+      { month: 6, eday: 3.9 },
+      { month: 7, eday: 3.6 },
+      { month: 8, eday: 3.3 },
+      { month: 9, eday: 3.7 },
+      { month: 10, eday: 4.0 },
+      { month: 11, eday: 4.4 },
+      { month: 12, eday: 4.4 }
     ]
   },
   south: {
     monthly: [
-      { month: 1, pvout: 4.0 },
-      { month: 2, pvout: 4.2 },
-      { month: 3, pvout: 4.1 },
-      { month: 4, pvout: 4.0 },
-      { month: 5, pvout: 3.8 },
-      { month: 6, pvout: 3.5 },
-      { month: 7, pvout: 3.2 },
-      { month: 8, pvout: 3.0 },
-      { month: 9, pvout: 3.4 },
-      { month: 10, pvout: 3.7 },
-      { month: 11, pvout: 4.0 },
-      { month: 12, pvout: 4.0 }
+      { month: 1, eday: 4.0 },
+      { month: 2, eday: 4.2 },
+      { month: 3, eday: 4.1 },
+      { month: 4, eday: 4.0 },
+      { month: 5, eday: 3.8 },
+      { month: 6, eday: 3.5 },
+      { month: 7, eday: 3.2 },
+      { month: 8, eday: 3.0 },
+      { month: 9, eday: 3.4 },
+      { month: 10, eday: 3.7 },
+      { month: 11, eday: 4.0 },
+      { month: 12, eday: 4.0 }
     ]
   }
 };
@@ -125,13 +122,13 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     setIsFallbackData(false);
 
     try {
-      // First try with CORS mode
+      // Use the PVGIS v5_2 API endpoint for 1kWp system
       const response = await fetch(
-        `/pvgis/seriescalc?lat=${latitude}&lon=${longitude}&startyear=2023&endyear=2023&outputformat=json&mountingplace=fixed&pvtechchoice=crystSi&peakpower=1&loss=14`,
+        `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${latitude}&lon=${longitude}&peakpower=1&loss=14&outputformat=basic`,
         {
           method: 'GET',
           headers: {
-            'Accept': 'application/json',
+            'Accept': 'text/html',
           },
         }
       );
@@ -140,22 +137,46 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const text = await response.text();
       
-      // Transform the PVGIS response to match our PvgisData type
+      // Parse the HTML table response
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+      const table = doc.querySelector('table');
+      
+      if (!table) {
+        throw new Error('No data table found in response');
+      }
+
+      // Extract monthly data from the table
+      const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header row
+      const monthlyData = rows.map((row, index) => {
+        const cells = row.querySelectorAll('td');
+        const eday = parseFloat(cells[1]?.textContent || '0'); // E_day value for 1kWp
+        return {
+          month: index + 1,
+          pvout: eday * 30, // Convert daily to monthly values
+          eday // Store the daily value for 1kWp
+        };
+      });
+
+      // Extract annual total
+      const annualRow = rows[rows.length - 1];
+      const annualEday = parseFloat(annualRow.querySelectorAll('td')[1]?.textContent || '0');
+
+      // Find the worst daily value (minimum E_day)
+      const worstDayPvout = Math.min(...monthlyData.map(month => month.eday));
+
       const transformedData: PvgisData = {
-        monthly: data.outputs.monthly.map((month: any) => ({
-          month: month.month,
-          pvout: month.H_d * 30 // Convert daily to monthly values
-        })),
+        monthly: monthlyData.map(({ month, pvout }) => ({ month, pvout })),
         annual: {
-          pvout: data.outputs.monthly.reduce((sum: number, month: any) => sum + month.H_d, 0) * 30 / 12
+          pvout: annualEday * 30 / 12 // Convert annual daily average to monthly
         },
         meta: {
-          latitude: data.inputs.location.latitude,
-          longitude: data.inputs.location.longitude,
+          latitude,
+          longitude,
           elevation: 0,
-          worstDayPvout: Math.min(...data.outputs.monthly.map((month: any) => month.H_d))
+          worstDayPvout // This is the minimum E_day for 1kWp
         }
       };
 
@@ -179,28 +200,22 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
 
 // Fallback data for Nigerian regions
 const getRegionalFallbackData = (region: NigerianRegion, latitude: number): PvgisData => {
-  const monthlyData = {
-    north: [5.2, 5.8, 6.2, 6.5, 6.3, 5.8, 5.2, 5.0, 5.5, 5.8, 5.5, 5.0],
-    middle: [4.8, 5.2, 5.5, 5.8, 5.5, 5.0, 4.5, 4.2, 4.8, 5.0, 4.8, 4.5],
-    south: [4.2, 4.5, 4.8, 5.0, 4.8, 4.5, 4.0, 3.8, 4.2, 4.5, 4.2, 4.0],
-  };
-
-  const pvoutValues = monthlyData[region];
-  const worstDayPvout = Math.min(...pvoutValues);
+  const monthlyData = NIGERIAN_SOLAR_DATA[region].monthly;
+  const worstDayPvout = Math.min(...monthlyData.map(month => month.eday));
 
   return {
-    monthly: pvoutValues.map((value: number, index: number) => ({
-      month: index + 1,
-      pvout: value * 30 // Convert daily to monthly values
+    monthly: monthlyData.map(({ month, eday }) => ({
+      month,
+      pvout: eday * 30 // Convert daily to monthly values
     })),
     annual: {
-      pvout: pvoutValues.reduce((sum, val) => sum + val, 0) * 30 / 12 // Average monthly value
+      pvout: monthlyData.reduce((sum, month) => sum + month.eday, 0) * 30 / 12
     },
     meta: {
       latitude,
       longitude: 0,
       elevation: 0,
-      worstDayPvout
+      worstDayPvout // This is the minimum E_day for 1kWp
     }
   };
 };
