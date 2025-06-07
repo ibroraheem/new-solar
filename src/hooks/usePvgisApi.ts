@@ -8,6 +8,11 @@ interface MonthlyData {
   eday: number; // Daily energy output for 1kWp
 }
 
+interface PvgisMonthlyData {
+  month: number;
+  E_d: number;
+}
+
 interface PvgisResponse {
   inputs: {
     location: {
@@ -37,11 +42,7 @@ interface PvgisResponse {
     };
   };
   outputs: {
-    monthly: {
-      month: number;
-      E_d: number; // Daily energy output
-      H_d: number; // Daily radiation
-    }[];
+    monthly: PvgisMonthlyData[];
   };
 }
 
@@ -117,14 +118,12 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     setError(null);
     setIsFallbackData(false);
 
-    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${latitude}&lon=${longitude}&peakpower=1&loss=14&outputformat=basic`;
-
     try {
-      console.log('Fetching PVGIS data through crossorigin.me...');
-      const response = await fetch(PROXY_SERVER + pvgisUrl, {
+      console.log('Fetching PVGIS data through Netlify function...');
+      const response = await fetch(`/.netlify/functions/pvgis-proxy?lat=${latitude}&lon=${longitude}`, {
         method: 'GET',
         headers: {
-          'Accept': 'text/html',
+          'Accept': 'application/json',
         },
       });
 
@@ -132,32 +131,14 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const text = await response.text();
+      const data = await response.json() as PvgisResponse;
       
-      // Parse the HTML table response
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/html');
-      const table = doc.querySelector('table');
-      
-      if (!table) {
-        throw new Error('No data table found in response');
-      }
-
-      // Extract monthly data from the table
-      const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header row
-      const monthlyData = rows.map((row, index) => {
-        const cells = row.querySelectorAll('td');
-        const eday = parseFloat(cells[1]?.textContent || '0'); // E_day value for 1kWp
-        return {
-          month: index + 1,
-          pvout: eday * 30, // Convert daily to monthly values
-          eday // Store the daily value for 1kWp
-        };
-      });
-
-      // Extract annual total
-      const annualRow = rows[rows.length - 1];
-      const annualEday = parseFloat(annualRow.querySelectorAll('td')[1]?.textContent || '0');
+      // Transform the data to match our PvgisData type
+      const monthlyData = data.outputs.monthly.map((month: PvgisMonthlyData) => ({
+        month: month.month,
+        pvout: month.E_d * 30, // Convert daily to monthly values
+        eday: month.E_d // Store the daily value for 1kWp
+      }));
 
       // Find the worst daily value (minimum E_day)
       const worstDayPvout = Math.min(...monthlyData.map(month => month.eday));
@@ -165,7 +146,7 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
       const transformedData: PvgisData = {
         monthly: monthlyData.map(({ month, pvout }) => ({ month, pvout })),
         annual: {
-          pvout: annualEday * 30 / 12 // Convert annual daily average to monthly
+          pvout: data.outputs.monthly.reduce((sum: number, month: PvgisMonthlyData) => sum + month.E_d, 0) * 30 / 12
         },
         meta: {
           latitude,
