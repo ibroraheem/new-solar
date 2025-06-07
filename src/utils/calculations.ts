@@ -43,7 +43,7 @@ function validateInputs(dailyEnergyDemand: number, backupHours: number): void {
     throw new Error(`Daily energy demand must be between ${MIN_DAILY_ENERGY} and ${MAX_DAILY_ENERGY} kWh`);
   }
   if (backupHours < MIN_BACKUP_HOURS || backupHours > MAX_BACKUP_HOURS) {
-    throw new Error(`Backup hours must be between ${MIN_BACKUP_HOURS} and ${MAX_BACKUP_HOURS}`);
+    throw new Error(`Backup hours must be between ${MIN_BACKUP_HOURS} and ${MAX_BACKUP_HOURS} hours`);
   }
 }
 
@@ -227,51 +227,64 @@ export function calculateSolarComponents(
   backupHours: number,
   worstMonthPvout: number
 ): SolarComponents {
-  // Validate inputs
-  validateInputs(dailyEnergyDemand, backupHours);
+  try {
+    // Validate inputs
+    validateInputs(dailyEnergyDemand, backupHours);
 
-  const requiredKwp = dailyEnergyDemand / (worstMonthPvout * 0.75);
-  const requiredPanelWatts = requiredKwp * 1000;
+    const requiredKwp = dailyEnergyDemand / (worstMonthPvout * 0.75);
+    const requiredPanelWatts = requiredKwp * 1000;
 
-  // Check system size limit with warning instead of error
-  if (requiredPanelWatts > MAX_SYSTEM_SIZE_KWP * 1000) {
-    console.warn(
-      `System design (${(requiredPanelWatts/1000).toFixed(1)}kWp) exceeds recommended limit of ${MAX_SYSTEM_SIZE_KWP}kWp. ` +
-      'Consider reducing energy consumption or improving efficiency.'
-    );
-  }
-
-  // Select components
-  const inverter = selectInverter(dailyEnergyDemand, requiredPanelWatts);
-  const panels = selectPanels(requiredKwp);
-  const batteries = selectBattery(dailyEnergyDemand, inverter.voltage, backupHours);
-
-  // Calculate currents with safety margins
-  const maxDcCurrent = (panels.totalWattage / inverter.voltage) * 1.25;
-  const maxAcCurrent = (inverter.watts / 230) * 1.1;
-
-  return {
-    systemVoltage: inverter.voltage,
-    inverterRating: inverter.watts,
-    batteryType: batteries.type,
-    batteryConfiguration: batteries,
-    solarPanels: panels,
-    chargeController: {
-      type: 'Built-in MPPT',
-      rating: inverter.mppt,
-      count: 1
-    },
-    cables: {
-      dcSize: maxDcCurrent <= 50 ? 16 : maxDcCurrent <= 100 ? 25 : 35,
-      acSize: maxAcCurrent <= 32 ? 6 : maxAcCurrent <= 50 ? 10 : 16
-    },
-    breakers: {
-      dcRating: Math.ceil(maxDcCurrent),
-      acRating: Math.ceil(maxAcCurrent)
-    },
-    otherComponents: {
-      spd: true,
-      avr: inverter.watts >= 5000
+    // Check system size limit with warning instead of error
+    if (requiredPanelWatts > MAX_SYSTEM_SIZE_KWP * 1000) {
+      console.warn(
+        `System design (${(requiredPanelWatts/1000).toFixed(1)}kWp) exceeds recommended limit of ${MAX_SYSTEM_SIZE_KWP}kWp. ` +
+        'Consider reducing energy consumption or improving efficiency.'
+      );
     }
-  };
+
+    // Select components
+    const inverter = selectInverter(dailyEnergyDemand, requiredPanelWatts);
+    const panels = selectPanels(requiredKwp);
+    const batteries = selectBattery(dailyEnergyDemand, inverter.voltage, backupHours);
+
+    // Calculate currents with safety margins
+    const maxDcCurrent = (panels.totalWattage / inverter.voltage) * 1.25;
+    const maxAcCurrent = (inverter.watts / 230) * 1.1;
+
+    return {
+      systemVoltage: inverter.voltage,
+      inverterRating: inverter.watts,
+      batteryType: batteries.type,
+      batteryConfiguration: batteries,
+      solarPanels: panels,
+      chargeController: {
+        type: 'Built-in MPPT',
+        rating: inverter.mppt,
+        count: 1
+      },
+      cables: {
+        dcSize: maxDcCurrent <= 50 ? 16 : maxDcCurrent <= 100 ? 25 : 35,
+        acSize: maxAcCurrent <= 32 ? 6 : maxAcCurrent <= 50 ? 10 : 16
+      },
+      breakers: {
+        dcRating: Math.ceil(maxDcCurrent),
+        acRating: Math.ceil(maxAcCurrent)
+      },
+      otherComponents: {
+        spd: true,
+        avr: inverter.watts >= 5000
+      }
+    };
+  } catch (error) {
+    console.error('Error in solar calculations:', error);
+    throw error; // Re-throw to be handled by the UI
+  }
 }
+
+export type NigerianRegion = 'north' | 'middle' | 'south';
+
+export const getNigerianRegion = (latitude: number): NigerianRegion => {
+  if (latitude >= 10) return 'north';
+  if (latitude >= 7) return 'middle';
+  return 'south';
+};
