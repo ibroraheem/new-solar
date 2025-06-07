@@ -1,63 +1,136 @@
 import { useState, useCallback } from 'react';
 import { LocationData, PvgisData } from '../types';
 
+interface MonthlyData {
+  month: number;
+  pvout: number;
+}
+
+interface PvgisResponse {
+  outputs?: {
+    monthly?: Array<{
+      month: number;
+      'H(i)_d': number;
+      E_d: number;
+    }>;
+  };
+  inputs?: {
+    location?: {
+      elevation: number;
+    };
+  };
+}
+
+// List of proxy servers to try if CORS fails
+const PROXY_SERVERS = [
+  'https://cors-anywhere.herokuapp.com/',
+  'https://api.allorigins.win/raw?url=',
+  'https://api.codetabs.com/v1/proxy?quest='
+];
+
 export const usePvgisApi = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Response> => {
+    try {
+      // First try direct fetch
+      const response = await fetch(url);
+      return response;
+    } catch (err) {
+      // If direct fetch fails and we have proxies to try
+      if (proxyIndex < PROXY_SERVERS.length) {
+        try {
+          const proxyUrl = PROXY_SERVERS[proxyIndex] + encodeURIComponent(url);
+          const response = await fetch(proxyUrl);
+          return response;
+        } catch (proxyErr) {
+          // Try next proxy
+          return fetchWithProxy(url, proxyIndex + 1);
+        }
+      }
+      // If all proxies fail, throw the original error
+      throw err;
+    }
+  };
 
   const fetchPvgisData = useCallback(async (location: LocationData): Promise<PvgisData | null> => {
     setIsLoading(true);
     setError(null);
 
-    try {
-      const url = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?` +
-        `lat=${location.latitude}&lon=${location.longitude}` +
-        `&startyear=2023&endyear=2023&outputformat=json` +
-        `&mountingplace=fixed&pvtechchoice=crystSi&peakpower=1&loss=14`;
+    let retries = 3;
+    const timeout = 10000; // 10 second timeout
 
-      const response = await fetch(url);
+    while (retries > 0) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const baseUrl = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?` +
+          `lat=${location.latitude}&lon=${location.longitude}` +
+          `&startyear=2023&endyear=2023&outputformat=json` +
+          `&mountingplace=fixed&pvtechchoice=crystSi&peakpower=1&loss=14`;
+
+        const response = await fetchWithProxy(baseUrl);
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json() as PvgisResponse;
+
+        if (!data.outputs?.monthly || !Array.isArray(data.outputs.monthly)) {
+          throw new Error('Invalid PVGIS response format');
+        }
+
+        // Convert daily to monthly kWh/m²
+        const monthly: MonthlyData[] = data.outputs.monthly.map((month) => ({
+          month: month.month,
+          pvout: month['H(i)_d'] * 30,
+        }));
+
+        const annualTotal = monthly.reduce((sum: number, m: MonthlyData) => sum + m.pvout, 0);
+
+        // Extract the minimum daily energy production (worst day PVOUT)
+        const worstDayPvout = Math.min(...data.outputs.monthly.map((m) => m.E_d));
+
+        return {
+          monthly,
+          annual: {
+            pvout: annualTotal,
+          },
+          meta: {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            elevation: data.inputs?.location?.elevation || 0,
+            worstDayPvout,
+          },
+        };
+      } catch (err) {
+        console.error('Error fetching PVGIS data:', err);
+        retries--;
+        
+        if (err instanceof Error) {
+          if (err.name === 'AbortError') {
+            setError('Request timed out. Please try again.');
+          } else if (err.message.includes('API error: 429')) {
+            setError('Too many requests. Please try again later.');
+          } else if (err.message.includes('API error: 500')) {
+            setError('Server error. Using estimated values.');
+          } else if (err.message.includes('Failed to fetch')) {
+            setError('Network error. Using estimated values.');
+          }
+        }
+        
+        if (retries === 0) {
+          setError('Failed to fetch solar data after multiple attempts. Using estimated values.');
+          return getEstimatedNigerianData(location);
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000 * (3 - retries))); // Exponential backoff
       }
-
-      const data = await response.json();
-
-      if (!data.outputs?.monthly || !Array.isArray(data.outputs.monthly)) {
-        throw new Error('Invalid PVGIS response format');
-      }
-
-      // Convert daily to monthly kWh/m²
-      const monthly = data.outputs.monthly.map((month: any) => ({
-        month: month.month,
-        pvout: month['H(i)_d'] * 30,
-      }));
-
-      const annualTotal = monthly.reduce((sum, m) => sum + m.pvout, 0);
-
-      // Extract the minimum daily energy production (worst day PVOUT)
-      const worstDayPvout = Math.min(...data.outputs.monthly.map((m: any) => m.E_d));
-
-      return {
-        monthly,
-        annual: {
-          pvout: annualTotal,
-        },
-        meta: {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          elevation: data.inputs?.location?.elevation || 0,
-          worstDayPvout,
-        },
-      };
-    } catch (err) {
-      console.error('Error fetching PVGIS data:', err);
-      setError('Failed to fetch solar data. Using estimated values.');
-
-      return getEstimatedNigerianData(location);
-    } finally {
-      setIsLoading(false);
     }
+    return null;
   }, []);
 
   return { fetchPvgisData, isLoading, error };

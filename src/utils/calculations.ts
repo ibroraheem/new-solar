@@ -1,3 +1,13 @@
+import { PvgisData, Appliance, SolarComponents, TimeSlot } from '../types';
+
+// Constants for validation
+const MAX_SYSTEM_SIZE_KWP = 12.6;
+const MIN_DAILY_ENERGY = 0.1; // kWh
+const MAX_DAILY_ENERGY = 100; // kWh
+const MIN_BACKUP_HOURS = 1;
+const MAX_BACKUP_HOURS = 24;
+const EFFICIENCY_FACTOR = 0.85; // 85% efficiency for battery calculations
+
 // Available hybrid inverter configurations
 const INVERTER_CONFIGS = [
   { watts: 2000, voltage: 12, mppt: 80, maxPvInput: 2000*1.2 },  // 2kVA
@@ -27,7 +37,15 @@ const PANEL_SIZES = [
   { watts: 600, maxSystemKw: 10.2 }
 ];
 
-import { Appliance, SolarComponents, TimeSlot } from '../types';
+// Input validation
+function validateInputs(dailyEnergyDemand: number, backupHours: number): void {
+  if (dailyEnergyDemand < MIN_DAILY_ENERGY || dailyEnergyDemand > MAX_DAILY_ENERGY) {
+    throw new Error(`Daily energy demand must be between ${MIN_DAILY_ENERGY} and ${MAX_DAILY_ENERGY} kWh`);
+  }
+  if (backupHours < MIN_BACKUP_HOURS || backupHours > MAX_BACKUP_HOURS) {
+    throw new Error(`Backup hours must be between ${MIN_BACKUP_HOURS} and ${MAX_BACKUP_HOURS}`);
+  }
+}
 
 // Calculate total energy demand for a specific time period
 export function calculateEnergyDemand(
@@ -77,12 +95,15 @@ export function calculateNightLoad(appliances: Appliance[]): number {
 export function calculateWorstMonthPvout(pvgisData: PvgisData | null): number {
   if (!pvgisData?.monthly?.length) return 3.3; // Default worst month value
   
-  // Find the month with lowest daily average
-  const worstMonth = pvgisData.monthly.reduce((worst, month) => 
+  interface MonthlyData {
+    month: number;
+    pvout: number;
+  }
+  
+  const worstMonth = pvgisData.monthly.reduce((worst: MonthlyData, month: MonthlyData) => 
     month.pvout < worst.pvout ? month : worst
   );
   
-  // Convert monthly total to daily average
   return worstMonth.pvout / 30;
 }
 
@@ -92,18 +113,29 @@ function selectInverter(
 ): typeof INVERTER_CONFIGS[0] {
   const peakPowerNeeded = (dailyEnergyDemand * 1000) / 4 * 1.5;
 
+  // First try to find a suitable inverter
   const inverter = INVERTER_CONFIGS.find(inv =>
     inv.watts >= peakPowerNeeded &&
     inv.maxPvInput >= requiredPanelWatts
   );
 
   if (!inverter) {
-    throw new Error('No suitable inverter found for the required load and PV input.');
+    // If no suitable inverter found, find the closest match
+    const closestInverter = INVERTER_CONFIGS.reduce((closest, curr) => {
+      const currDiff = Math.abs(curr.watts - peakPowerNeeded);
+      const closestDiff = Math.abs(closest.watts - peakPowerNeeded);
+      return currDiff < closestDiff ? curr : closest;
+    });
+
+    console.warn(
+      `No exact match found. Using closest inverter (${closestInverter.watts}W) ` +
+      `for required ${peakPowerNeeded}W. System may need optimization.`
+    );
+    return closestInverter;
   }
 
   return inverter;
 }
-
 
 function selectBattery(
   dailyEnergyDemand: number,
@@ -116,19 +148,23 @@ function selectBattery(
   parallel: number;
   totalBatteries: number;
 } {
-  // Add 30% buffer to the energy storage requirement
-  const energyNeeded = dailyEnergyDemand * backupHours * 1.3; // kWh needed with 30% buffer
+  // Add 30% buffer and account for efficiency losses
+  const energyNeeded = (dailyEnergyDemand * backupHours * 1.3) / EFFICIENCY_FACTOR;
 
   if (systemVoltage === 12) {
-    // Use Tubular batteries for 12V systems
     const batteryKwh = BATTERY_CONFIGS.tubular.kwh;
     const parallel = Math.ceil(energyNeeded / batteryKwh);
+    
+    // Validate parallel configuration
+    if (parallel > 4) {
+      console.warn('High number of parallel batteries. Consider using a higher voltage system.');
+    }
 
     return {
       type: 'Tubular',
       capacityAh: BATTERY_CONFIGS.tubular.ah,
       series: 1,
-      parallel: parallel,
+      parallel,
       totalBatteries: parallel
     };
   } else {
@@ -138,12 +174,17 @@ function selectBattery(
       .find(b => b.kwh >= energyNeeded);
 
     if (!battery) {
-      // If no single battery is large enough, use the largest available
       const largest = BATTERY_CONFIGS.lithium
         .filter(b => b.voltage === systemVoltage)
         .reduce((max, curr) => curr.kwh > max.kwh ? curr : max);
 
       const unitsNeeded = Math.ceil(energyNeeded / largest.kwh);
+      
+      // Validate parallel configuration
+      if (unitsNeeded > 4) {
+        console.warn('High number of parallel batteries. Consider using a higher capacity battery.');
+      }
+
       return {
         type: 'Lithium',
         capacityAh: (largest.kwh * 1000) / systemVoltage,
@@ -162,7 +203,6 @@ function selectBattery(
     };
   }
 }
-
 
 function selectPanels(requiredKwp: number): {
   wattage: number;
@@ -187,24 +227,26 @@ export function calculateSolarComponents(
   backupHours: number,
   worstMonthPvout: number
 ): SolarComponents {
+  // Validate inputs
+  validateInputs(dailyEnergyDemand, backupHours);
+
   const requiredKwp = dailyEnergyDemand / (worstMonthPvout * 0.75);
   const requiredPanelWatts = requiredKwp * 1000;
 
-  // ⛔ Reject if over 12.6kW limit
-  if (requiredPanelWatts > 12600) {
-    throw new Error('System design exceeds 12.6kWp limit. Please reduce energy consumption or improve efficiency.');
+  // Check system size limit with warning instead of error
+  if (requiredPanelWatts > MAX_SYSTEM_SIZE_KWP * 1000) {
+    console.warn(
+      `System design (${(requiredPanelWatts/1000).toFixed(1)}kWp) exceeds recommended limit of ${MAX_SYSTEM_SIZE_KWP}kWp. ` +
+      'Consider reducing energy consumption or improving efficiency.'
+    );
   }
 
-  // Select inverter that can handle both load and PV capacity
+  // Select components
   const inverter = selectInverter(dailyEnergyDemand, requiredPanelWatts);
-
-  // Select panels
   const panels = selectPanels(requiredKwp);
-
-  // Select batteries
   const batteries = selectBattery(dailyEnergyDemand, inverter.voltage, backupHours);
 
-  // Currents
+  // Calculate currents with safety margins
   const maxDcCurrent = (panels.totalWattage / inverter.voltage) * 1.25;
   const maxAcCurrent = (inverter.watts / 230) * 1.1;
 
