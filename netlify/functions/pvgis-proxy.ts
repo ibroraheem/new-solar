@@ -32,11 +32,29 @@ const handler: Handler = async (event) => {
     // Log the request parameters
     console.log('Fetching PVGIS data for:', { lat, lon });
 
-    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/seriescalc?lat=${lat}&lon=${lon}&startyear=2020&endyear=2020&outputformat=json&mountingplace=building&pvtechchoice=crystSi&peakpower=1&loss=14`;
-    
+    // Use the newer PVGIS API version (v5_2)
+    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?` +
+      `lat=${lat}&lon=${lon}` +
+      `&startyear=2020&endyear=2020` +
+      `&outputformat=json` +
+      `&pvtechchoice=crystSi` +
+      `&peakpower=1` +
+      `&loss=14` +
+      `&components=1` +
+      `&raddatabase=PVGIS-SARAH2` +
+      `&angle=0` +
+      `&aspect=0`;
+
     console.log('PVGIS URL:', pvgisUrl);
 
-    const response = await fetch(pvgisUrl);
+    const response = await fetch(pvgisUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      // Add timeout
+      signal: AbortSignal.timeout(30000) // 30 second timeout
+    });
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -60,6 +78,10 @@ const handler: Handler = async (event) => {
       hasOutputs: !!data.outputs,
       monthlyDataLength: data.outputs?.monthly?.length
     });
+
+    if (!data.outputs?.monthly) {
+      throw new Error('Invalid response structure from PVGIS API');
+    }
 
     // Extract monthly data and find minimum E_day
     const monthlyData = data.outputs.monthly;
@@ -95,12 +117,18 @@ const handler: Handler = async (event) => {
       } : error
     });
 
+    // Return a more specific error message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isTimeout = errorMessage.includes('timeout');
+    const isNetworkError = errorMessage.includes('network') || errorMessage.includes('fetch');
+
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
         error: 'Failed to fetch PVGIS data',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: errorMessage,
+        type: isTimeout ? 'timeout' : isNetworkError ? 'network' : 'unknown'
       }),
     };
   }
