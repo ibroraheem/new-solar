@@ -69,14 +69,15 @@ function MapClickHandler({ onLocationSelect }: { onLocationSelect: (location: Lo
 }
 
 interface LocationInputProps {
-  onLocationSelect: (location: LocationData) => void;
-  selectedLocation: LocationData | null;
+  onLocationSelect: (location: { latitude: number; longitude: number }) => void;
 }
 
-const LocationInput: React.FC<LocationInputProps> = ({ onLocationSelect, selectedLocation }) => {
+export const LocationInput: React.FC<LocationInputProps> = ({ onLocationSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
+  const [error, setError] = useState<string>('');
 
   const filteredCities = searchTerm
     ? NIGERIAN_CITIES.filter((city) =>
@@ -85,73 +86,78 @@ const LocationInput: React.FC<LocationInputProps> = ({ onLocationSelect, selecte
     : NIGERIAN_CITIES;
 
   const handleSelectCity = (city: LocationData) => {
-    onLocationSelect(city);
+    setSelectedLocation(city);
     setShowDropdown(false);
     setSearchTerm('');
+    onLocationSelect({ latitude: city.latitude, longitude: city.longitude });
   };
 
   return (
-    <div className="mb-6">
-      <label className="block text-gray-700 text-sm font-medium mb-2">
-        Your Location in Nigeria
-      </label>
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <h2 className="text-xl font-semibold mb-4">Select Location</h2>
       
-      <div className="relative">
-        <div className="flex gap-2">
-          <div className="relative flex-grow">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MapPin className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              className="block w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
-              placeholder={selectedLocation ? selectedLocation.city : "Enter your city or click map"}
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setShowDropdown(true);
-              }}
-              onFocus={() => setShowDropdown(true)}
-            />
-            {selectedLocation && !searchTerm && (
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm text-gray-500">
-                {selectedLocation.latitude.toFixed(4)}°, {selectedLocation.longitude.toFixed(4)}°
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Search Nigerian Cities
+        </label>
+        <div className="relative">
+          <div className="flex gap-2">
+            <div className="relative flex-grow">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MapPin className="h-5 w-5 text-gray-400" />
               </div>
-            )}
-          </div>
-          
-          <button
-            className="flex-shrink-0 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-            onClick={() => setShowMap(!showMap)}
-          >
-            <Search className="h-5 w-5" />
-          </button>
-        </div>
-        
-        {showDropdown && (
-          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md max-h-60 overflow-auto">
-            <ul className="py-1">
-              {filteredCities.length > 0 ? (
-                filteredCities.map((city) => (
-                  <li
-                    key={city.city}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
-                    onClick={() => handleSelectCity(city)}
-                  >
-                    <span>{city.city}</span>
-                    <span className="text-gray-500 text-sm">
-                      {city.latitude.toFixed(4)}°, {city.longitude.toFixed(4)}°
-                    </span>
-                  </li>
-                ))
-              ) : (
-                <li className="px-4 py-2 text-gray-500">No cities found</li>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Search cities..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowDropdown(true);
+                }}
+                onFocus={() => setShowDropdown(true)}
+              />
+              {selectedLocation && !searchTerm && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm text-gray-500">
+                  {selectedLocation.latitude.toFixed(4)}°, {selectedLocation.longitude.toFixed(4)}°
+                </div>
               )}
-            </ul>
+            </div>
+
+            <button
+              type="button"
+              className="flex-shrink-0 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              onClick={() => setShowMap(!showMap)}
+            >
+              <Search className="h-5 w-5" />
+            </button>
           </div>
-        )}
+
+          {showDropdown && (
+            <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md max-h-60 overflow-auto">
+              <ul className="py-1">
+                {filteredCities.length > 0 ? (
+                  filteredCities.map((city) => (
+                    <li
+                      key={city.city}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
+                      onClick={() => handleSelectCity(city)}
+                    >
+                      <span>{city.city}</span>
+                      <span className="text-gray-500 text-sm">
+                        {city.latitude.toFixed(4)}°, {city.longitude.toFixed(4)}°
+                      </span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="px-4 py-2 text-gray-500">No cities found</li>
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
-      
+
       {showMap && (
         <div className="mt-4 h-96 rounded-lg overflow-hidden shadow-md">
           <MapContainer
@@ -163,7 +169,7 @@ const LocationInput: React.FC<LocationInputProps> = ({ onLocationSelect, selecte
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-            <MapClickHandler onLocationSelect={onLocationSelect} />
+            <MapClickHandler onLocationSelect={handleSelectCity} />
             {selectedLocation && (
               <Marker
                 position={[selectedLocation.latitude, selectedLocation.longitude]}
@@ -172,7 +178,11 @@ const LocationInput: React.FC<LocationInputProps> = ({ onLocationSelect, selecte
           </MapContainer>
         </div>
       )}
-      
+
+      {error && (
+        <div className="mt-2 text-sm text-red-600">{error}</div>
+      )}
+
       {!selectedLocation && (
         <p className="mt-2 text-sm text-orange-600">
           Please select your location for accurate solar calculations
