@@ -293,7 +293,7 @@ const Charts: React.FC<ChartsProps> = ({
           {isFallbackData && <span className="text-yellow-600"> (Using estimated data)</span>}
         </p>
         <div style={{ height: '300px' }}>
-          <canvas ref={monthlyChartRef}></canvas>
+        <canvas ref={monthlyChartRef}></canvas>
         </div>
       </div>
       
@@ -304,7 +304,7 @@ const Charts: React.FC<ChartsProps> = ({
           {isFallbackData && <span className="text-yellow-600"> (Using estimated data)</span>}
         </p>
         <div style={{ height: '300px' }}>
-          <canvas ref={generationChartRef}></canvas>
+        <canvas ref={generationChartRef}></canvas>
         </div>
       </div>
       
@@ -314,7 +314,7 @@ const Charts: React.FC<ChartsProps> = ({
           Shows the designed backup hours compared to the actual hours of autonomy with the recommended battery.
         </p>
         <div style={{ height: '300px' }}>
-          <canvas ref={batteryChartRef}></canvas>
+        <canvas ref={batteryChartRef}></canvas>
         </div>
       </div>
       
@@ -325,7 +325,7 @@ const Charts: React.FC<ChartsProps> = ({
           {isFallbackData && <span className="text-yellow-600"> (Using estimated data)</span>}
         </p>
         <div style={{ height: '300px' }}>
-          <canvas ref={utilizationChartRef}></canvas>
+        <canvas ref={utilizationChartRef}></canvas>
         </div>
       </div>
     </div>
