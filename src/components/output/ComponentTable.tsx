@@ -240,3 +240,4 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, dailyEnergy
 };
 
 export { ComponentTable };
+export default ComponentTable;

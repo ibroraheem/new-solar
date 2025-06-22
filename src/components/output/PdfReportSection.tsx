@@ -68,3 +68,4 @@ const PdfReportSection: React.FC = () => {
 };
 
 export default PdfReportSection;
+export { PdfReportSection };

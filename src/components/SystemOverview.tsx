@@ -121,4 +121,5 @@ const SystemOverview: React.FC = () => {
   );
 };
 
-export { SystemOverview }; 
+export { SystemOverview };
+export default SystemOverview; 

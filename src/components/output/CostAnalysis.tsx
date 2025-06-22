@@ -121,4 +121,5 @@ const CostAnalysis: React.FC<CostAnalysisProps> = ({ components }) => {
   );
 };
 
-export { CostAnalysis }; 
+export { CostAnalysis };
+export default CostAnalysis; 

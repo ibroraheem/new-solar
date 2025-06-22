@@ -12,4 +12,5 @@ const InverterSelection: React.FC = () => {
   );
 };
 
-export { InverterSelection }; 
+export { InverterSelection };
+export default InverterSelection; 

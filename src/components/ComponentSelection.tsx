@@ -12,4 +12,5 @@ const ComponentSelection: React.FC = () => {
   );
 };
 
-export { ComponentSelection }; 
+export { ComponentSelection };
+export default ComponentSelection; 

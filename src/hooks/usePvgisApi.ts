@@ -128,24 +128,24 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
           }
 
           // Calculate worst month E_d value
-          const worstMonth = data.outputs.monthly.reduce((worst: any, month: any) => 
-            month.pvout < worst.pvout ? month : worst
+          const worstMonth = data.outputs.monthly.reduce((worst: PvgisMonthlyData, month: PvgisMonthlyData) => 
+            month.E_d < worst.E_d ? month : worst
           );
 
           const pvgisData: PvgisData = {
-            monthly: data.outputs.monthly.map((month: any) => ({
+            monthly: data.outputs.monthly.map((month: PvgisMonthlyData) => ({
               month: month.month,
-              pvout: month.pvout,
-              eday: month.eday || (month.pvout / 30) // Use eday if available, otherwise calculate
+              pvout: month.E_d * 30, // Convert daily to monthly values
+              eday: month.E_d // Include the daily E_d value
             })),
             annual: {
-              pvout: data.outputs.annual.pvout
+              pvout: data.outputs.annual?.pvout || (data.outputs.monthly.reduce((sum, month) => sum + month.E_d, 0) * 30 / 12)
             },
             meta: {
-              latitude: data.meta.latitude,
-              longitude: data.meta.longitude,
-              elevation: data.meta.elevation,
-              worstDayPvout: worstMonth.eday || (worstMonth.pvout / 30)
+              latitude: data.meta?.latitude || latitude,
+              longitude: data.meta?.longitude || 0,
+              elevation: data.meta?.elevation || 0,
+              worstDayPvout: worstMonth.E_d
             }
           };
 

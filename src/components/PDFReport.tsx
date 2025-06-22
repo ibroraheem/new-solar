@@ -12,4 +12,5 @@ const PDFReport: React.FC = () => {
   );
 };
 
-export { PDFReport }; 
+export { PDFReport };
+export default PDFReport; 

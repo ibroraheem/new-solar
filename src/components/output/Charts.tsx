@@ -338,3 +338,4 @@ const Charts: React.FC<ChartsProps> = ({
 };
 
 export default Charts;
+export { Charts };
