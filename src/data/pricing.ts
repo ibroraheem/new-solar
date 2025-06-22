@@ -145,9 +145,9 @@ export const BATTERY_PRICING: ComponentPrice[] = [
   },
   {
     id: 'bat-7.6kwh',
-    name: '7.6KWH Battery',
+    name: '7.6KWH Battery (24V)',
     capacity: '7.6KWH',
-    voltage: '48V',
+    voltage: '24V',
     price: 1320000, // Final price (includes 20% markup)
     category: 'battery',
     brand: 'Pylontech',
