@@ -78,6 +78,50 @@ export const INVERTER_PRICING: ComponentPrice[] = [
 
 export const BATTERY_PRICING: ComponentPrice[] = [
   {
+    id: 'bat-1.28kwh-12v-lithium',
+    name: '1.28KWH Battery (12V) - Lithium',
+    capacity: '1.28KWH',
+    voltage: '12V',
+    price: 280000, // Final price (includes 20% markup)
+    category: 'battery',
+    brand: 'Pylontech',
+    warranty: '5 Years',
+    efficiency: '98%'
+  },
+  {
+    id: 'bat-2.56kwh-12v-lithium',
+    name: '2.56KWH Battery (12V) - Lithium',
+    capacity: '2.56KWH',
+    voltage: '12V',
+    price: 520000, // Final price (includes 20% markup)
+    category: 'battery',
+    brand: 'Pylontech',
+    warranty: '5 Years',
+    efficiency: '98%'
+  },
+  {
+    id: 'bat-2.86kwh-12v-tubular',
+    name: '2.86KWH Battery (12V) - Tubular',
+    capacity: '2.86KWH',
+    voltage: '12V',
+    price: 180000, // Final price (includes 20% markup)
+    category: 'battery',
+    brand: 'Trojan',
+    warranty: '3 Years',
+    efficiency: '85%'
+  },
+  {
+    id: 'bat-3.84kwh-12v-lithium',
+    name: '3.84KWH Battery (12V) - Lithium',
+    capacity: '3.84KWH',
+    voltage: '12V',
+    price: 720000, // Final price (includes 20% markup)
+    category: 'battery',
+    brand: 'Pylontech',
+    warranty: '5 Years',
+    efficiency: '98%'
+  },
+  {
     id: 'bat-5kwh-24v',
     name: '5KWH Battery (24V)',
     capacity: '5KWH',
