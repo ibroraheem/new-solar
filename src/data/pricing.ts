@@ -217,6 +217,33 @@ export const CABLE_PRICING = [
 
 export const BREAKER_PRICING = [
   {
+    id: 'breaker-16a-dc',
+    name: '16A DC Breaker',
+    capacity: '16A',
+    voltage: '500VDC',
+    basePrice: 12000,
+    markupPrice: 14400, // 12k + 20%
+    brand: 'Schneider'
+  },
+  {
+    id: 'breaker-20a-dc',
+    name: '20A DC Breaker',
+    capacity: '20A',
+    voltage: '500VDC',
+    basePrice: 13000,
+    markupPrice: 15600, // 13k + 20%
+    brand: 'Schneider'
+  },
+  {
+    id: 'breaker-25a-dc',
+    name: '25A DC Breaker',
+    capacity: '25A',
+    voltage: '500VDC',
+    basePrice: 14000,
+    markupPrice: 16800, // 14k + 20%
+    brand: 'Schneider'
+  },
+  {
     id: 'breaker-32a-dc',
     name: '32A DC Breaker',
     capacity: '32A',
@@ -232,6 +259,15 @@ export const BREAKER_PRICING = [
     voltage: '500VDC',
     basePrice: 18000,
     markupPrice: 21600, // 18k + 20%
+    brand: 'Schneider'
+  },
+  {
+    id: 'breaker-50a-dc',
+    name: '50A DC Breaker',
+    capacity: '50A',
+    voltage: '500VDC',
+    basePrice: 22000,
+    markupPrice: 26400, // 22k + 20%
     brand: 'Schneider'
   },
   {
@@ -295,4 +331,23 @@ export const getBatteryByCapacity = (capacityKwh: number): ComponentPrice | unde
     const batKwh = parseFloat(bat.capacity.replace('KWH', ''));
     return batKwh >= capacityKwh;
   });
+};
+
+// Utility functions for breaker selection
+export const getBreakerByRating = (rating: string, voltage: string) => {
+  return BREAKER_PRICING.find(b => b.capacity === rating && b.voltage === voltage);
+};
+
+export const getAvailableDcBreakerRatings = (): number[] => {
+  return BREAKER_PRICING
+    .filter(b => b.voltage === '500VDC')
+    .map(b => parseInt(b.capacity.replace('A', '')))
+    .sort((a, b) => a - b);
+};
+
+export const getAvailableAcBreakerRatings = (): string[] => {
+  return BREAKER_PRICING
+    .filter(b => b.voltage === '230VAC')
+    .map(b => b.capacity)
+    .sort((a, b) => parseInt(a) - parseInt(b));
 }; 

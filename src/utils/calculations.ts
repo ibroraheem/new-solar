@@ -8,6 +8,8 @@ import {
   BREAKER_PRICING,
   getInverterByWatts,
   getBatteryByCapacity,
+  getBreakerByRating,
+  getAvailableDcBreakerRatings,
   formatPrice
 } from '../data/pricing';
 
@@ -26,8 +28,8 @@ const PANEL_SIZES = [
   { watts: 600, maxSystemKw: 10.2 }
 ];
 
-// DC Breaker ratings for 500VDC systems (common in Nigerian market)
-const DC_BREAKER_RATINGS = [16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000];
+// DC Breaker ratings available in pricing database
+const AVAILABLE_DC_BREAKER_RATINGS = getAvailableDcBreakerRatings();
 
 // Input validation
 function validateInputs(dailyEnergyDemand: number, backupHours: number): void {
@@ -227,8 +229,8 @@ function selectPanels(requiredKwp: number): {
 // Function to calculate DC breaker rating for 500VDC systems
 function calculateDcBreakerRating(maxDcCurrent: number): number {
   // Find the next available breaker rating that can handle the current
-  const breaker = DC_BREAKER_RATINGS.find(rating => rating >= maxDcCurrent);
-  return breaker || DC_BREAKER_RATINGS[DC_BREAKER_RATINGS.length - 1];
+  const breaker = AVAILABLE_DC_BREAKER_RATINGS.find(rating => rating >= maxDcCurrent);
+  return breaker || AVAILABLE_DC_BREAKER_RATINGS[AVAILABLE_DC_BREAKER_RATINGS.length - 1];
 }
 
 export function calculateSolarComponents(
@@ -270,11 +272,29 @@ export function calculateSolarComponents(
 
     // Calculate breaker requirements using pricing database
     const dcBreakerRating = calculateDcBreakerRating(maxCurrent);
-    const dcBreaker = BREAKER_PRICING.find(b => b.capacity === `${dcBreakerRating}A` && b.voltage === '500VDC');
-    const acBreaker = BREAKER_PRICING.find(b => b.capacity === (inverter.watts <= 2000 ? '16A' : '32A') && b.voltage === '230VAC');
+    let dcBreaker = getBreakerByRating(`${dcBreakerRating}A`, '500VDC');
     
-    if (!dcBreaker || !acBreaker) {
-      throw new Error('No suitable breakers found');
+    // Determine AC breaker based on inverter capacity
+    const acBreakerRating = inverter.watts <= 2000 ? '16A' : '32A';
+    let acBreaker = getBreakerByRating(acBreakerRating, '230VAC');
+    
+    // If exact breakers not found, use fallback options
+    if (!dcBreaker) {
+      console.warn(`DC breaker ${dcBreakerRating}A not found, using 63A as fallback`);
+      const fallbackDcBreaker = getBreakerByRating('63A', '500VDC');
+      if (!fallbackDcBreaker) {
+        throw new Error('No suitable DC breakers found in pricing database');
+      }
+      dcBreaker = fallbackDcBreaker;
+    }
+    
+    if (!acBreaker) {
+      console.warn(`AC breaker ${acBreakerRating} not found, using 32A as fallback`);
+      const fallbackAcBreaker = getBreakerByRating('32A', '230VAC');
+      if (!fallbackAcBreaker) {
+        throw new Error('No suitable AC breakers found in pricing database');
+      }
+      acBreaker = fallbackAcBreaker;
     }
     
     const totalBreakerPrice = dcBreaker.markupPrice + acBreaker.markupPrice;

@@ -38,15 +38,22 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
     name: '',
     watts: 0,
   });
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    
     const totalEnergy = calculateTotalEnergy(appliances);
     onTotalEnergyChange(totalEnergy);
     
     // Validate appliances
     const errors = validateAllAppliances(appliances);
     setValidationErrors(errors);
-  }, [appliances, onTotalEnergyChange]);
+  }, [appliances, onTotalEnergyChange, isMounted]);
 
   const filteredAppliances = appliances.filter((appliance) => {
     const matchesSearch = appliance.name.toLowerCase().includes(searchTerm.toLowerCase());

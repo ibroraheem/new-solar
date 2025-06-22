@@ -59,17 +59,54 @@ export const checkTimeSlotOverlap = (slots: TimeSlot[]): boolean => {
 };
 
 const doSlotsOverlap = (slot1: TimeSlot, slot2: TimeSlot): boolean => {
-  // Handle night slot (spans midnight)
-  if (slot1.name === 'night' || slot2.name === 'night') {
-    return true; // Night slot overlaps with everything
+  // Handle night slot (spans midnight: 22:00 to 06:00)
+  const isNightSlot1 = slot1.name === 'night';
+  const isNightSlot2 = slot2.name === 'night';
+  
+  // If both are night slots, they overlap
+  if (isNightSlot1 && isNightSlot2) {
+    return true;
+  }
+  
+  // If one is night slot, check if the other overlaps with night hours
+  if (isNightSlot1) {
+    // slot1 is night (22:00-06:00), check if slot2 overlaps
+    const nightStart = 22;
+    const nightEnd = 6;
+    const slot2Start = slot2.start;
+    const slot2End = slot2.end;
+    
+    // Check if slot2 overlaps with night hours
+    // slot2 overlaps if it starts before night ends OR ends after night starts
+    if (slot2Start < nightEnd || slot2End > nightStart) {
+      return true;
+    }
+    return false;
+  }
+  
+  if (isNightSlot2) {
+    // slot2 is night (22:00-06:00), check if slot1 overlaps
+    const nightStart = 22;
+    const nightEnd = 6;
+    const slot1Start = slot1.start;
+    const slot1End = slot1.end;
+    
+    // Check if slot1 overlaps with night hours
+    // slot1 overlaps if it starts before night ends OR ends after night starts
+    if (slot1Start < nightEnd || slot1End > nightStart) {
+      return true;
+    }
+    return false;
   }
 
+  // Regular time slot overlap check (both slots are within same day)
   const start1 = slot1.start;
   const end1 = slot1.end;
   const start2 = slot2.start;
   const end2 = slot2.end;
 
-  // Check if slots overlap
+  // Check if slots overlap (they overlap if one starts before the other ends)
+  // Note: slots that meet exactly (like 17-22 and 22-6) do NOT overlap
   return start1 < end2 && start2 < end1;
 };
 
@@ -90,13 +127,16 @@ export const validateAllAppliances = (appliances: Appliance[]): ValidationError[
   const errors: ValidationError[] = [];
   
   appliances.forEach((appliance, index) => {
-    const applianceErrors = validateAppliance(appliance);
-    applianceErrors.forEach(error => {
-      errors.push({
-        field: `appliance-${index}-${error.field}`,
-        message: `${appliance.name}: ${error.message}`
+    // Only validate selected appliances
+    if (appliance.isSelected) {
+      const applianceErrors = validateAppliance(appliance);
+      applianceErrors.forEach(error => {
+        errors.push({
+          field: `appliance-${index}-${error.field}`,
+          message: `${appliance.name}: ${error.message}`
+        });
       });
-    });
+    }
   });
   
   return errors;

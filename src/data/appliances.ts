@@ -1,5 +1,8 @@
 import { Appliance, ApplianceCategory, TIME_SLOTS } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+
+// Simple ID generator
+let idCounter = 0;
+const generateId = () => `appliance-${++idCounter}`;
 
 export const applianceCategories: ApplianceCategory[] = [
   { name: 'Home Appliances', key: 'home' },
@@ -13,11 +16,10 @@ const createAppliance = (
   category: 'home' | 'office' | 'custom',
   timeSlots: { name: 'morning' | 'afternoon' | 'evening' | 'night'; selected: boolean }[]
 ): Appliance => ({
-  id: uuidv4(),
+  id: generateId(),
   name,
   watts,
   quantity: 1,
-  hoursPerDay: 4,
   isSelected: false,
   isCritical: false,
   category,
@@ -28,7 +30,12 @@ const createAppliance = (
 });
 
 // Helper for common time patterns
-const timePatterns = {
+const timePatterns: {
+  allDay: { name: 'morning' | 'afternoon' | 'evening' | 'night'; selected: boolean }[];
+  dayOnly: { name: 'morning' | 'afternoon' | 'evening' | 'night'; selected: boolean }[];
+  eveningNight: { name: 'morning' | 'afternoon' | 'evening' | 'night'; selected: boolean }[];
+  nightOnly: { name: 'morning' | 'afternoon' | 'evening' | 'night'; selected: boolean }[];
+} = {
   allDay: [
     { name: 'morning', selected: true },
     { name: 'afternoon', selected: true },
@@ -53,7 +60,7 @@ const timePatterns = {
     { name: 'evening', selected: false },
     { name: 'night', selected: true }
   ]
-} as const;
+};
 
 export const defaultAppliances: Appliance[] = [
   // Home Appliances - Night-focused
