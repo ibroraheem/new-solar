@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { defaultAppliances } from '../../data/appliances';
 import { Appliance, LocationData } from '../../types';
 import { VALIDATION_CONSTANTS } from '../../utils/constants';
-import ManualInput from './ManualInput';
 import ApplianceSelector from './ApplianceSelector';
 import LocationInput from './LocationInput';
 import BackupDurationInput from './BackupDurationInput';
@@ -17,8 +16,6 @@ interface InputSectionProps {
 }
 
 const InputSection: React.FC<InputSectionProps> = ({ onCalculate }) => {
-  const [inputMethod, setInputMethod] = useState<'manual' | 'appliance'>('manual');
-  const [manualEnergy, setManualEnergy] = useState(5); 
   const [applianceEnergy, setApplianceEnergy] = useState(0);
   const [appliances, setAppliances] = useState<Appliance[]>(defaultAppliances);
   const [location, setLocation] = useState<LocationData | null>(null);
@@ -51,14 +48,24 @@ const InputSection: React.FC<InputSectionProps> = ({ onCalculate }) => {
 
   // Check if ready to calculate
   useEffect(() => {
-    setIsReadyToCalculate(!!location);
-  }, [location]);
+    setIsReadyToCalculate(!!location && applianceEnergy > 0);
+  }, [location, applianceEnergy]);
+
+  const handleLocationSelect = (locationData: { latitude: number; longitude: number }) => {
+    // Find the city name from the coordinates or use a generic name
+    const cityName = `Location (${locationData.latitude.toFixed(4)}, ${locationData.longitude.toFixed(4)})`;
+    setLocation({
+      city: cityName,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude
+    });
+  };
 
   const handleCalculate = () => {
-    if (!location) return;
+    if (!location || applianceEnergy <= 0) return;
     
     onCalculate({
-      dailyEnergyDemand: inputMethod === 'manual' ? manualEnergy : applianceEnergy,
+      dailyEnergyDemand: applianceEnergy,
       location,
       backupHours,
       appliances,
@@ -72,64 +79,27 @@ const InputSection: React.FC<InputSectionProps> = ({ onCalculate }) => {
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Solar System Calculator</h2>
             <p className="mt-2 text-gray-600">
-              Calculate the perfect solar setup for your Nigerian home or business
+              Build your energy profile and calculate the perfect solar setup for your Nigerian home or business
             </p>
           </div>
           
-          {/* Input Method Selector */}
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <label className="inline-flex items-center flex-1">
-                <input
-                  type="radio"
-                  className="form-radio h-5 w-5 text-green-600"
-                  name="input-method"
-                  checked={inputMethod === 'manual'}
-                  onChange={() => setInputMethod('manual')}
-                />
-                <span className="ml-2 text-gray-700">
-                  Manual Input
-                  <span className="block text-sm text-gray-500">
-                    Enter your daily energy consumption directly
-                  </span>
-                </span>
-              </label>
-              <label className="inline-flex items-center flex-1">
-                <input
-                  type="radio"
-                  className="form-radio h-5 w-5 text-green-600"
-                  name="input-method"
-                  checked={inputMethod === 'appliance'}
-                  onChange={() => setInputMethod('appliance')}
-                />
-                <span className="ml-2 text-gray-700">
-                  Appliance Calculator
-                  <span className="block text-sm text-gray-500">
-                    Build your energy profile by selecting appliances
-                  </span>
-                </span>
-              </label>
-            </div>
-          </div>
-          
-          {/* Input Forms */}
-          {inputMethod === 'manual' ? (
-            <ManualInput
-              initialValue={manualEnergy}
-              onEnergyUpdate={setManualEnergy}
-            />
-          ) : (
+          {/* Appliance Load Profile */}
+          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Build Your Energy Profile</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Select your appliances and set their usage patterns to calculate your daily energy consumption accurately.
+            </p>
+            
             <ApplianceSelector
               appliances={appliances}
               onAppliancesChange={setAppliances}
               onTotalEnergyChange={setApplianceEnergy}
             />
-          )}
+          </div>
           
           {/* Location & Backup Duration */}
           <LocationInput
-            onLocationSelect={setLocation}
-            selectedLocation={location}
+            onLocationSelect={handleLocationSelect}
           />
           
           <BackupDurationInput
@@ -154,7 +124,7 @@ const InputSection: React.FC<InputSectionProps> = ({ onCalculate }) => {
             
             {!isReadyToCalculate && (
               <p className="mt-2 text-sm text-orange-600">
-                Please select your location to continue
+                {!location ? 'Please select your location to continue' : 'Please add appliances to your energy profile'}
               </p>
             )}
           </div>

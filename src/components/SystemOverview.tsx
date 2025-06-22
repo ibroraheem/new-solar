@@ -7,7 +7,6 @@ import { LocationData, PvgisData, SolarComponents, Appliance } from '../types';
 
 const SystemOverview: React.FC = () => {
   const [calculationResult, setCalculationResult] = useState<{
-    dailyEnergyDemand: number;
     pvoutData: PvgisData | null;
     worstMonthPvout: number;
     recommendedComponents: SolarComponents;
@@ -33,13 +32,12 @@ const SystemOverview: React.FC = () => {
       const worstMonthPvout = calculateWorstMonthPvout(pvgisData);
       
       const recommendedComponents = calculateSolarComponents(
-        params.dailyEnergyDemand,
+        params.appliances,
         params.backupHours,
         worstMonthPvout
       );
       
       setCalculationResult({
-        dailyEnergyDemand: params.dailyEnergyDemand,
         pvoutData: pvgisData,
         worstMonthPvout,
         recommendedComponents,
@@ -108,7 +106,6 @@ const SystemOverview: React.FC = () => {
           <OutputSection
             visible={showResults}
             appliances={calculationResult.appliances}
-            dailyEnergyDemand={calculationResult.dailyEnergyDemand}
             pvgisData={calculationResult.pvoutData}
             worstMonthPvout={calculationResult.worstMonthPvout}
             solarComponents={calculationResult.recommendedComponents}

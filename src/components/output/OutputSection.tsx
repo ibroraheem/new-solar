@@ -6,13 +6,13 @@ import { Appliance, PvgisData, SolarComponents } from "../../types";
 import {
   calculateCriticalLoad,
   calculateNightLoad,
+  calculateEnergyDemand,
 } from "../../utils/calculations";
 import { Moon, Zap } from "lucide-react";
 
 interface OutputSectionProps {
   visible: boolean;
   appliances: Appliance[];
-  dailyEnergyDemand: number;
   pvgisData: PvgisData | null;
   worstMonthPvout: number;
   solarComponents: SolarComponents;
@@ -23,7 +23,6 @@ interface OutputSectionProps {
 const OutputSection: React.FC<OutputSectionProps> = ({
   visible,
   appliances,
-  dailyEnergyDemand,
   pvgisData,
   worstMonthPvout,
   solarComponents,
@@ -32,6 +31,7 @@ const OutputSection: React.FC<OutputSectionProps> = ({
 }) => {
   if (!visible) return null;
 
+  const dailyEnergyDemand = calculateEnergyDemand(appliances);
   const criticalLoadDemand = calculateCriticalLoad(appliances);
   const nightLoadDemand = calculateNightLoad(appliances);
 
@@ -109,7 +109,7 @@ const OutputSection: React.FC<OutputSectionProps> = ({
                 <div>
                   <p className="text-blue-100">Solar Capacity</p>
                   <p className="text-2xl font-bold">
-                    {solarComponents.solarPanels.totalWattage / 1000}kW
+                    {(solarComponents.solarPanels.watts * solarComponents.solarPanels.quantity / 1000)}kW
                     <sub>p</sub>
                   </p>
                 </div>
@@ -138,7 +138,7 @@ const OutputSection: React.FC<OutputSectionProps> = ({
           {/* Charts */}
           <Charts
             pvgisData={pvgisData}
-            dailyEnergyDemand={dailyEnergyDemand}
+            appliances={appliances}
             worstMonthPvout={worstMonthPvout}
             solarComponents={solarComponents}
             backupHours={backupHours}
@@ -148,7 +148,7 @@ const OutputSection: React.FC<OutputSectionProps> = ({
           {/* Component Table */}
           <ComponentTable
             components={solarComponents}
-            dailyEnergyDemand={dailyEnergyDemand}
+            appliances={appliances}
           />
 
           {/* PDF Report Section */}

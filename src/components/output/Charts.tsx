@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { Chart, registerables, ChartData as ChartJsData } from 'chart.js';
-import { PvgisData, SolarComponents } from '../../types';
+import { PvgisData, SolarComponents, Appliance } from '../../types';
+import { calculateEnergyDemand } from '../../utils/calculations';
 
 Chart.register(...registerables);
 
 interface ChartsProps {
   pvgisData: PvgisData | null;
-  dailyEnergyDemand: number;
+  appliances: Appliance[];
   worstMonthPvout: number;
   solarComponents: SolarComponents;
   backupHours: number;
@@ -15,7 +16,7 @@ interface ChartsProps {
 
 const Charts: React.FC<ChartsProps> = ({
   pvgisData,
-  dailyEnergyDemand,
+  appliances,
   worstMonthPvout,
   solarComponents,
   backupHours,
@@ -33,6 +34,9 @@ const Charts: React.FC<ChartsProps> = ({
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
+
+  // Calculate daily energy demand from appliances
+  const dailyEnergyDemand = calculateEnergyDemand(appliances);
 
   // Cleanup function to destroy existing charts
   const destroyCharts = () => {
@@ -112,7 +116,7 @@ const Charts: React.FC<ChartsProps> = ({
       const ctx = generationChartRef.current.getContext('2d');
       if (ctx) {
         const dailyGeneration = pvgisData.monthly.map(month => 
-          (solarComponents.solarPanels.totalWattage * (month.pvout / 30) * 0.75) / 1000
+          (solarComponents.solarPanels.watts * solarComponents.solarPanels.quantity * (month.pvout / 30) * 0.75) / 1000
         );
 
         const generationData: ChartJsData = {
@@ -223,7 +227,7 @@ const Charts: React.FC<ChartsProps> = ({
       const ctx = utilizationChartRef.current.getContext('2d');
       if (ctx) {
         const annualGeneration = pvgisData.monthly.reduce((sum, month) => 
-          sum + (solarComponents.solarPanels.totalWattage * (month.pvout / 30) * 0.75 * 30) / 1000, 0
+          sum + (solarComponents.solarPanels.watts * solarComponents.solarPanels.quantity * (month.pvout / 30) * 0.75 * 30) / 1000, 0
         );
         
         const annualDemand = dailyEnergyDemand * 365;

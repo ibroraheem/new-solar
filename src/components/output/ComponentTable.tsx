@@ -1,13 +1,17 @@
 import React from 'react';
-import { SolarComponents } from '../../types';
+import { SolarComponents, Appliance } from '../../types';
 import { formatPrice } from '../../data/pricing';
+import { calculateEnergyDemand } from '../../utils/calculations';
 
 interface ComponentTableProps {
   components: SolarComponents;
-  dailyEnergyDemand: number;
+  appliances: Appliance[];
 }
 
-const ComponentTable: React.FC<ComponentTableProps> = ({ components, dailyEnergyDemand }) => {
+const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances }) => {
+  // Calculate daily energy demand from appliances
+  const dailyEnergyDemand = calculateEnergyDemand(appliances);
+
   // Format battery configuration display
   const getBatteryConfig = () => {
     const singleBatteryCapacity = (components.batteryConfiguration.capacityAh * components.systemVoltage) / 1000;

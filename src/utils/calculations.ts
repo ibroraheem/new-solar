@@ -8,6 +8,7 @@ import {
   BREAKER_PRICING,
   getInverterByWatts,
   getBatteryByCapacity,
+  getBatteryByCapacityAndVoltage,
   getBreakerByRating,
   getAvailableDcBreakerRatings,
   formatPrice
@@ -32,10 +33,7 @@ const PANEL_SIZES = [
 const AVAILABLE_DC_BREAKER_RATINGS = getAvailableDcBreakerRatings();
 
 // Input validation
-function validateInputs(dailyEnergyDemand: number, backupHours: number): void {
-  if (dailyEnergyDemand < MIN_DAILY_ENERGY || dailyEnergyDemand > MAX_DAILY_ENERGY) {
-    throw new Error(`Daily energy demand must be between ${MIN_DAILY_ENERGY} and ${MAX_DAILY_ENERGY} kWh`);
-  }
+function validateInputs(backupHours: number): void {
   if (backupHours < MIN_BACKUP_HOURS || backupHours > MAX_BACKUP_HOURS) {
     throw new Error(`Backup hours must be between ${MIN_BACKUP_HOURS} and ${MAX_BACKUP_HOURS} hours`);
   }
@@ -111,27 +109,30 @@ function selectInverter(
   price: number;
   name: string;
 } {
-  // Use centralized peak power margin instead of hardcoded value
-  const peakPowerNeeded = dailyEnergyDemand * 1000 * SYSTEM_CONSTANTS.PEAK_POWER_MARGIN;
+  // Calculate peak power needed based on daily energy and typical usage patterns
+  // Assume 4-6 hours of peak usage per day, so peak power = daily energy / peak hours
+  const peakHoursPerDay = 5; // Typical peak usage hours
+  const peakPowerNeeded = (dailyEnergyDemand / peakHoursPerDay) * 1000; // Convert to watts
 
   // Use pricing database to find suitable inverter
   const inverter = getInverterByWatts(peakPowerNeeded);
-  
+
   if (!inverter) {
-    throw new Error(`No suitable inverter found for ${peakPowerNeeded}W requirement`);
+    throw new Error(`No suitable inverter found for ${peakPowerNeeded.toFixed(0)}W peak power requirement`);
   }
 
-  // Convert KVA to watts and determine voltage based on capacity
+  // Convert KVA to watts
   const kva = parseFloat(inverter.capacity.replace('KVA', ''));
   const watts = kva * 1000;
   
-  // Determine voltage based on inverter capacity
+  // Determine voltage based on inverter capacity - using realistic voltage assignments
+  // Small systems (≤2KVA): 12V, Medium systems (≤4.2KVA): 24V, Large systems (>4.2KVA): 48V
   let voltage = 48; // Default for larger systems
   if (kva <= 2) voltage = 12;
   else if (kva <= 4.2) voltage = 24;
   
   // Determine MPPT current based on voltage
-  const mppt = voltage === 12 ? 80 : 120;
+  const mppt = voltage === 12 ? 80 : voltage === 24 ? 100 : 120;
   
   // Estimate max PV input (typically 1.5x inverter capacity)
   const maxPvInput = watts * 1.5;
@@ -141,7 +142,7 @@ function selectInverter(
     voltage,
     mppt,
     maxPvInput,
-    price: inverter.markupPrice,
+    price: inverter.price,
     name: inverter.name
   };
 }
@@ -159,27 +160,27 @@ function selectBattery(
   price: number;
   name: string;
 } {
-  // Calculate hourly demand and add 30% buffer for efficiency losses using centralized constants
+  // Calculate hourly demand and add buffer for efficiency losses
   const hourlyDemand = dailyEnergyDemand / 24; // Convert daily to hourly
   const energyNeeded = (hourlyDemand * backupHours * SYSTEM_CONSTANTS.PEAK_POWER_MARGIN) / EFFICIENCY_FACTOR;
 
-  // Use pricing database to find suitable battery
-  const battery = getBatteryByCapacity(energyNeeded);
+  // Use pricing database to find suitable battery that matches system voltage
+  const battery = getBatteryByCapacityAndVoltage(energyNeeded, systemVoltage);
   
   if (!battery) {
-    throw new Error(`No suitable battery found for ${energyNeeded.toFixed(1)}kWh requirement`);
+    throw new Error(`No suitable ${systemVoltage}V battery found for ${energyNeeded.toFixed(1)}kWh requirement`);
   }
 
   const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
   const parallel = Math.ceil(energyNeeded / batteryKwh);
-  
+    
   // Validate parallel configuration
   if (parallel > 4) {
     console.warn('High number of parallel batteries. Consider using a higher capacity battery.');
   }
 
   const capacityAh = (batteryKwh * 1000) / systemVoltage;
-  const totalPrice = battery.markupPrice * parallel;
+  const totalPrice = battery.price * parallel;
 
   // Determine series configuration based on voltage
   let series = 1;
@@ -221,7 +222,7 @@ function selectPanels(requiredKwp: number): {
     wattage: panelSize.watts,
     count: panelCount,
     totalWattage: panelSize.watts * panelCount,
-    price: panel.markupPrice * panelCount,
+    price: panel.price * panelCount,
     name: panel.name
   };
 }
@@ -234,13 +235,21 @@ function calculateDcBreakerRating(maxDcCurrent: number): number {
 }
 
 export function calculateSolarComponents(
-  dailyEnergyDemand: number,
+  appliances: Appliance[],
   backupHours: number,
   worstMonthPvout: number
 ): SolarComponents {
   try {
     // Validate inputs
-    validateInputs(dailyEnergyDemand, backupHours);
+    validateInputs(backupHours);
+
+    // Calculate daily energy demand from appliance load profile
+    const dailyEnergyDemand = calculateEnergyDemand(appliances);
+    
+    // Validate calculated energy demand
+    if (dailyEnergyDemand < MIN_DAILY_ENERGY || dailyEnergyDemand > MAX_DAILY_ENERGY) {
+      throw new Error(`Calculated daily energy demand (${dailyEnergyDemand.toFixed(1)}kWh) is outside the supported range of ${MIN_DAILY_ENERGY}-${MAX_DAILY_ENERGY} kWh. Please adjust your appliance selection.`);
+    }
 
     const requiredKwp = dailyEnergyDemand / (worstMonthPvout * SYSTEM_CONSTANTS.SOLAR_EFFICIENCY);
     const requiredPanelWatts = requiredKwp * 1000;
@@ -268,7 +277,7 @@ export function calculateSolarComponents(
     if (!cable) {
       throw new Error(`No pricing found for ${cableSize} cable`);
     }
-    const cablePrice = cable.markupPrice * cableLength;
+    const cablePrice = cable.price * cableLength;
 
     // Calculate breaker requirements using pricing database
     const dcBreakerRating = calculateDcBreakerRating(maxCurrent);
@@ -297,7 +306,7 @@ export function calculateSolarComponents(
       acBreaker = fallbackAcBreaker;
     }
     
-    const totalBreakerPrice = dcBreaker.markupPrice + acBreaker.markupPrice;
+    const totalBreakerPrice = dcBreaker.price + acBreaker.price;
 
     // Calculate total system cost
     const totalSystemCost = inverter.price + battery.price + panels.price + cablePrice + totalBreakerPrice;
@@ -338,14 +347,14 @@ export function calculateSolarComponents(
           size: `${dcBreakerRating}A-DC`,
           current: dcBreakerRating,
           voltage: dcBreaker.voltage,
-          price: dcBreaker.markupPrice,
+          price: dcBreaker.price,
           name: dcBreaker.name
         },
         ac: {
           size: `${acBreaker.capacity}-AC`,
           current: parseInt(acBreaker.capacity),
           voltage: acBreaker.voltage,
-          price: acBreaker.markupPrice,
+          price: acBreaker.price,
           name: acBreaker.name
         }
       },

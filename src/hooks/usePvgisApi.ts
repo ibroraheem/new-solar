@@ -117,15 +117,15 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
             components: 1
           },
           timeout: parseInt(process.env.PVGIS_TIMEOUT || '30000')
-        });
+      });
 
         if (response.data && response.data.outputs) {
           const data = response.data;
-          
+
           // Validate the response structure
           if (!data.outputs.monthly || !Array.isArray(data.outputs.monthly)) {
             throw new Error('Invalid PVGIS response structure');
-          }
+      }
 
           // Calculate worst month E_d value
           const worstMonth = data.outputs.monthly.reduce((worst: PvgisMonthlyData, month: PvgisMonthlyData) => 
@@ -134,25 +134,25 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
 
           const pvgisData: PvgisData = {
             monthly: data.outputs.monthly.map((month: PvgisMonthlyData) => ({
-              month: month.month,
-              pvout: month.E_d * 30, // Convert daily to monthly values
+          month: month.month,
+          pvout: month.E_d * 30, // Convert daily to monthly values
               eday: month.E_d // Include the daily E_d value
             })),
-            annual: {
+        annual: {
               pvout: data.outputs.annual?.pvout || (data.outputs.monthly.reduce((sum, month) => sum + month.E_d, 0) * 30 / 12)
-            },
-            meta: {
+        },
+        meta: {
               latitude: data.meta?.latitude || latitude,
               longitude: data.meta?.longitude || 0,
               elevation: data.meta?.elevation || 0,
               worstDayPvout: worstMonth.E_d
-            }
-          };
+        }
+      };
 
-          setLoading(false);
+      setLoading(false);
           return pvgisData;
         }
-      } catch (err) {
+    } catch (err) {
         // Continue to next proxy if this one fails
         continue;
       }
@@ -161,12 +161,12 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     // If all proxies fail, use fallback data
     console.error('All PVGIS proxies failed, using fallback data');
     setError('Failed to fetch solar data from all sources. Using regional averages.');
-    setIsFallbackData(true);
-    
-    const region = getNigerianRegion(latitude);
-    const fallbackData = getRegionalFallbackData(region, latitude);
-    setLoading(false);
-    return fallbackData;
+      setIsFallbackData(true);
+      
+      const region = getNigerianRegion(latitude);
+      const fallbackData = getRegionalFallbackData(region, latitude);
+      setLoading(false);
+      return fallbackData;
   };
 
   return { fetchPvgisData, loading, error, isFallbackData };
