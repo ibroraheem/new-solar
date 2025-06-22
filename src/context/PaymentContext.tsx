@@ -1,25 +1,26 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface PaymentContextType {
-  isPremium: boolean;
+  hasPdfAccess: boolean;
   accessToken: string | null;
   initiatePayment: (email: string) => Promise<void>;
   verifyPayment: (reference: string) => Promise<void>;
+  revokePdfAccess: () => void;
   logout: () => void;
 }
 
 const PaymentContext = createContext<PaymentContextType | undefined>(undefined);
 
 export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isPremium, setIsPremium] = useState(false);
+  const [hasPdfAccess, setHasPdfAccess] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
     // Check for existing token in localStorage
-    const storedToken = localStorage.getItem('premium_access_token');
+    const storedToken = localStorage.getItem('pdf_access_token');
     if (storedToken) {
       setAccessToken(storedToken);
-      setIsPremium(true);
+      setHasPdfAccess(true);
     }
   }, []);
 
@@ -53,9 +54,9 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const data = await response.json();
 
       if (data.success && data.accessToken) {
-        localStorage.setItem('premium_access_token', data.accessToken);
+        localStorage.setItem('pdf_access_token', data.accessToken);
         setAccessToken(data.accessToken);
-        setIsPremium(true);
+        setHasPdfAccess(true);
       } else {
         throw new Error('Payment verification failed');
       }
@@ -65,19 +66,26 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('premium_access_token');
+  const revokePdfAccess = () => {
+    localStorage.removeItem('pdf_access_token');
     setAccessToken(null);
-    setIsPremium(false);
+    setHasPdfAccess(false);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('pdf_access_token');
+    setAccessToken(null);
+    setHasPdfAccess(false);
   };
 
   return (
     <PaymentContext.Provider
       value={{
-        isPremium,
+        hasPdfAccess,
         accessToken,
         initiatePayment,
         verifyPayment,
+        revokePdfAccess,
         logout,
       }}
     >

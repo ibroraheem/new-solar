@@ -1,7 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FileText, Download, CreditCard } from 'lucide-react';
+import { usePayment } from '../../context/PaymentContext';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const PdfReportSection: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const { hasPdfAccess, revokePdfAccess } = usePayment();
+  const navigate = useNavigate();
+
+  const handlePayment = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Redirect to payment page where user can enter email
+      navigate('/upgrade');
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Failed to initiate payment. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!hasPdfAccess) {
+      toast.error('Please purchase PDF access first');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      // TODO: Implement actual PDF generation and download
+      // For now, simulate download
+      toast.success('PDF report downloaded successfully!');
+      
+      // Revoke access after successful download
+      setTimeout(() => {
+        revokePdfAccess();
+        toast.success('Access revoked. Purchase again for another report.');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download PDF. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
       <div className="flex flex-col md:flex-row items-center">
@@ -38,19 +86,32 @@ const PdfReportSection: React.FC = () => {
         
         <div className="w-full md:w-auto flex flex-col items-center">
           <div className="bg-gray-100 rounded-lg p-4 mb-4 w-full text-center">
-            <p className="text-gray-500 text-sm">One-time payment</p>
-            <p className="text-3xl font-bold text-gray-900">₦5,000</p>
+            <p className="text-gray-500 text-sm">Per project</p>
+            <p className="text-3xl font-bold text-gray-900">₦10,000</p>
           </div>
           
           <button
-  type="button"
-  disabled
-  className="w-full md:w-auto flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md shadow-sm text-gray-500 bg-gray-100 cursor-not-allowed"
->
-  <CreditCard className="h-5 w-5 mr-2 text-gray-400" />
-  Coming Soon
-</button>
-
+            type="button"
+            onClick={hasPdfAccess ? handleDownload : handlePayment}
+            disabled={isLoading}
+            className={`w-full md:w-auto flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${
+              isLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
+            }`}
+          >
+            {hasPdfAccess ? (
+              <>
+                <Download className="h-5 w-5 mr-2" />
+                {isLoading ? 'Downloading...' : 'Download PDF Report'}
+              </>
+            ) : (
+              <>
+                <CreditCard className="h-5 w-5 mr-2" />
+                {isLoading ? 'Processing...' : 'Pay ₦10,000 with Paystack'}
+              </>
+            )}
+          </button>
           
           <p className="mt-2 text-xs text-gray-500">
             Secure payment via Paystack

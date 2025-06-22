@@ -45,14 +45,15 @@ const handler: Handler = async (event) => {
     const { status, data } = response.data;
 
     if (status && data.status === 'success') {
-      // Generate a secure JWT token
+      // Generate a temporary JWT token for PDF download access
       const tokenPayload = {
         userId: data.customer?.email || 'anonymous',
         reference: reference,
         amount: data.amount,
         paidAt: data.paid_at,
+        accessType: 'pdf_download', // Temporary access for PDF download
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+        exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour access for PDF download
       };
 
       const accessToken = jwt.sign(tokenPayload, JWT_SECRET);

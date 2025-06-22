@@ -38,10 +38,10 @@ const handler: Handler = async (event) => {
         amount: 1000000, // ₦10,000 in kobo (Paystack uses kobo)
         currency: 'NGN',
         callback_url: `${process.env.URL}/payment-success`,
-        reference: `solar_premium_${Date.now()}`,
+        reference: `solar_pdf_${Date.now()}`,
         metadata: {
-          product: 'Solar System Design Premium',
-          description: 'Full access to solar system design features including inverters, components, and PDF reports'
+          product: 'Solar System PDF Report',
+          description: 'Detailed PDF report with system specifications, sizing calculations, and installation guidelines'
         }
       },
       {

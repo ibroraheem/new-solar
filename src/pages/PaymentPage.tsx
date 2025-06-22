@@ -37,34 +37,34 @@ const PaymentPage: React.FC = () => {
 
   const premiumFeatures = [
     {
-      title: 'Advanced Inverter Selection',
-      description: 'Compare and select from multiple inverter brands and models with detailed specifications',
+      title: 'Complete System Specifications',
+      description: 'Detailed specifications for all components including panels, inverters, and batteries',
       icon: '⚡'
     },
     {
-      title: 'Component Comparison Tool',
-      description: 'Side-by-side comparison of solar panels, batteries, and other components',
+      title: 'Sizing Calculations',
+      description: 'Step-by-step calculations showing how each component was sized for your needs',
       icon: '🔍'
     },
     {
-      title: 'Detailed PDF Reports',
-      description: 'Generate comprehensive PDF reports with system specifications, costs, and ROI analysis',
+      title: 'Installation Guidelines',
+      description: 'Professional installation instructions and safety guidelines',
       icon: '📄'
     },
     {
-      title: 'Multiple System Designs',
-      description: 'Save and compare different system configurations for your location',
-      icon: '💾'
-    },
-    {
       title: 'Cost Analysis',
-      description: 'Detailed cost breakdown including installation, maintenance, and payback period',
+      description: 'Detailed cost breakdown with ROI analysis and payback period',
       icon: '💰'
     },
     {
-      title: 'Technical Support',
-      description: 'Priority access to technical support and installation guidance',
+      title: 'Maintenance Schedule',
+      description: 'Recommended maintenance schedule and troubleshooting guide',
       icon: '🛠️'
+    },
+    {
+      title: 'Technical Support',
+      description: 'Access to technical support for installation and setup questions',
+      icon: '📞'
     }
   ];
 
@@ -72,16 +72,16 @@ const PaymentPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Upgrade to Premium</h1>
-          <p className="text-xl text-gray-600 mb-2">Get access to advanced solar system design features</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Download PDF Report</h1>
+          <p className="text-xl text-gray-600 mb-2">Get a detailed PDF report for your solar system design</p>
           <div className="text-3xl font-bold text-green-600">₦10,000</div>
-          <p className="text-gray-500">One-time payment • Lifetime access</p>
+          <p className="text-gray-500">Per project • One-time download</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Premium Features */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Premium Features</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">PDF Report Features</h2>
             <div className="space-y-4">
               {premiumFeatures.map((feature, index) => (
                 <div key={index} className="flex items-start space-x-3">
@@ -133,8 +133,7 @@ const PaymentPage: React.FC = () => {
             <div className="mt-6 p-4 bg-gray-50 rounded-md">
               <h3 className="font-medium text-gray-900 mb-2">What's included:</h3>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Lifetime access to all premium features</li>
-                <li>• No recurring payments</li>
+                <li>• One-time download of the detailed PDF report</li>
                 <li>• Secure payment via Paystack</li>
                 <li>• Instant access after payment</li>
                 <li>• 30-day money-back guarantee</li>

@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { usePayment } from '../context/PaymentContext';
+import { useNavigate } from 'react-router-dom';
+import { Crown } from 'lucide-react';
 import InputSection from './input/InputSection';
 import OutputSection from './output/OutputSection';
 import { usePvgisApi } from '../hooks/usePvgisApi';
@@ -17,6 +20,8 @@ const SystemOverview: React.FC = () => {
   const [showResults, setShowResults] = useState(false);
   const [calculationError, setCalculationError] = useState<string | null>(null);
   const { fetchPvgisData, loading, error, isFallbackData } = usePvgisApi();
+  const { hasPdfAccess } = usePayment();
+  const navigate = useNavigate();
 
   const handleCalculate = async (params: {
     dailyEnergyDemand: number;
@@ -65,11 +70,25 @@ const SystemOverview: React.FC = () => {
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-green-700 mb-4">Solar System Designer</h1>
-            <p className="text-lg text-gray-600">
-              Design your perfect solar power system with our advanced calculator
-            </p>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex-1"></div>
+            <div className="text-center flex-1">
+              <h1 className="text-4xl font-bold text-green-700 mb-4">Solar System Designer</h1>
+              <p className="text-lg text-gray-600">
+                Design your perfect solar power system with our advanced calculator
+              </p>
+            </div>
+            <div className="flex-1 flex justify-end">
+              {!hasPdfAccess && (
+                <button
+                  onClick={() => navigate('/upgrade')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-200"
+                >
+                  <Crown className="h-4 w-4 mr-2" />
+                  Download PDF Report
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
