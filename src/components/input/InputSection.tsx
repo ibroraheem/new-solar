@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { defaultAppliances } from '../../data/appliances';
 import { Appliance, LocationData } from '../../types';
+import { VALIDATION_CONSTANTS } from '../../utils/constants';
 import ManualInput from './ManualInput';
 import ApplianceSelector from './ApplianceSelector';
 import LocationInput from './LocationInput';
@@ -24,9 +25,9 @@ const InputSection: React.FC<InputSectionProps> = ({ onCalculate }) => {
   const [backupHours, setBackupHours] = useState(8);
   const [isReadyToCalculate, setIsReadyToCalculate] = useState(false);
 
-  // Ensure backup hours stays within valid range
+  // Ensure backup hours stays within valid range using centralized constants
   const handleBackupHoursChange = (hours: number) => {
-    const validHours = Math.max(8, Math.min(24, hours));
+    const validHours = Math.max(VALIDATION_CONSTANTS.MIN_BACKUP_HOURS, Math.min(VALIDATION_CONSTANTS.MAX_BACKUP_HOURS, hours));
     setBackupHours(validHours);
   };
 

@@ -11,7 +11,51 @@
   functions = "netlify/functions"
   functionsPort = 9999
 
+[build.environment]
+  # Payment Configuration
+  PAYSTACK_SECRET_KEY = "your_paystack_secret_key_here"
+  PAYSTACK_PUBLIC_KEY = "your_paystack_public_key_here"
+  
+  # JWT Configuration
+  JWT_SECRET = "your_jwt_secret_key_here_change_in_production"
+  
+  # Application Configuration
+  URL = "https://your-domain.netlify.app"
+  ALLOWED_ORIGIN = "https://your-domain.netlify.app"
+  
+  # PVGIS Configuration
+  PVGIS_TIMEOUT = "30000"
+  PVGIS_RETRY_ATTEMPTS = "3"
+  
+  # Feature Flags
+  ENABLE_PREMIUM_FEATURES = "true"
+  ENABLE_PDF_GENERATION = "true"
+  ENABLE_COMPONENT_COMPARISON = "true"
+
+# Redirects for payment success/failure
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200 
+  from = "/payment-success"
+  to = "/?payment=success"
+  status = 302
+
+[[redirects]]
+  from = "/payment-cancelled"
+  to = "/upgrade?payment=cancelled"
+  status = 302
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Headers for API functions
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "https://your-domain.netlify.app"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization" 

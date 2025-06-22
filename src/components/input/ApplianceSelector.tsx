@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Power, Clock, Trash2, X, CheckSquare, Square, Sun, Sunrise, Sunset, Moon } from 'lucide-react';
+import { Search, Plus, Power, Clock, Trash2, X, CheckSquare, Square, Sun, Sunrise, Sunset, Moon, AlertTriangle, Info } from 'lucide-react';
 import { Appliance, ApplianceCategory, TimeSlot } from '../../types';
 import { applianceCategories } from '../../data/appliances';
+import { validateAllAppliances, ValidationError } from '../../utils/validation';
+import PresetSelector from './PresetSelector';
+import TimeSlotSelector from './TimeSlotSelector';
 
 interface ApplianceSelectorProps {
   appliances: Appliance[];
@@ -30,6 +33,7 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('home');
   const [showAddCustomForm, setShowAddCustomForm] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [customAppliance, setCustomAppliance] = useState({
     name: '',
     watts: 0,
@@ -38,6 +42,10 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
   useEffect(() => {
     const totalEnergy = calculateTotalEnergy(appliances);
     onTotalEnergyChange(totalEnergy);
+    
+    // Validate appliances
+    const errors = validateAllAppliances(appliances);
+    setValidationErrors(errors);
   }, [appliances, onTotalEnergyChange]);
 
   const filteredAppliances = appliances.filter((appliance) => {
@@ -95,9 +103,15 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
     if (!appliance || !timeSlot) return;
     
     // Calculate max duration in minutes for this time slot
-    const slotDuration = timeSlot.end > timeSlot.start 
-      ? timeSlot.end - timeSlot.start 
-      : (24 - timeSlot.start) + timeSlot.end;
+    let slotDuration;
+    if (timeSlot.name === 'night') {
+      // Night slot spans midnight: 22:00 to 06:00 = 8 hours
+      slotDuration = 8;
+    } else {
+      slotDuration = timeSlot.end > timeSlot.start 
+        ? timeSlot.end - timeSlot.start 
+        : (24 - timeSlot.start) + timeSlot.end;
+    }
     const maxMinutes = slotDuration * 60;
     
     // Validate input
@@ -172,15 +186,44 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
   };
 
   const getTimeSlotDuration = (slot: TimeSlot): string => {
-    const hours = slot.end > slot.start 
-      ? slot.end - slot.start 
-      : (24 - slot.start) + slot.end;
-    return `${slot.start}:00-${slot.end}:00 (${hours}h max)`;
+    let hours;
+    if (slot.name === 'night') {
+      hours = 8; // 22:00 to 06:00 = 8 hours
+    } else {
+      hours = slot.end > slot.start 
+        ? slot.end - slot.start 
+        : (24 - slot.start) + slot.end;
+    }
+    return `${slot.start.toString().padStart(2, '0')}:00-${slot.end.toString().padStart(2, '0')}:00 (${hours}h max)`;
   };
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Appliance-based Calculator</h3>
+      
+      {/* Preset Selector */}
+      <PresetSelector 
+        onPresetSelect={onAppliancesChange}
+        existingAppliances={appliances}
+      />
+      
+      {/* Validation Errors */}
+      {validationErrors.length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <span className="text-sm font-medium text-red-800">Please fix the following issues:</span>
+          </div>
+          <ul className="text-sm text-red-700 space-y-1">
+            {validationErrors.map((error, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <span className="text-red-500">•</span>
+                <span>{error.message}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       
       <div className="mb-4 flex flex-col sm:flex-row gap-2">
         <div className="relative flex-grow">
@@ -383,19 +426,42 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
                             </button>
                             {slot.selected && (
                               <div className="mt-1">
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max={
-                                    (slot.end > slot.start 
-                                      ? slot.end - slot.start 
-                                      : (24 - slot.start) + slot.end) * 60
-                                  }
-                                  className="w-16 border border-gray-300 rounded-md shadow-sm p-1 text-center text-sm"
-                                  placeholder="mins"
-                                  value={slot.durationMinutes || ''}
-                                  onChange={(e) => handleDurationChange(appliance.id, slot.id, parseInt(e.target.value))}
-                                />
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max={
+                                      slot.name === 'night' ? 8 : 
+                                      (slot.end > slot.start 
+                                        ? slot.end - slot.start 
+                                        : (24 - slot.start) + slot.end)
+                                    }
+                                    className="w-12 border border-gray-300 rounded-md shadow-sm p-1 text-center text-sm"
+                                    placeholder="hrs"
+                                    value={slot.durationMinutes ? Math.floor(slot.durationMinutes / 60) : ''}
+                                    onChange={(e) => {
+                                      const hours = parseInt(e.target.value) || 0;
+                                      const minutes = hours * 60;
+                                      handleDurationChange(appliance.id, slot.id, minutes);
+                                    }}
+                                  />
+                                  <span className="text-xs text-gray-500">h</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="59"
+                                    className="w-12 border border-gray-300 rounded-md shadow-sm p-1 text-center text-sm"
+                                    placeholder="min"
+                                    value={slot.durationMinutes ? slot.durationMinutes % 60 : ''}
+                                    onChange={(e) => {
+                                      const currentHours = slot.durationMinutes ? Math.floor(slot.durationMinutes / 60) : 0;
+                                      const minutes = parseInt(e.target.value) || 0;
+                                      const totalMinutes = (currentHours * 60) + minutes;
+                                      handleDurationChange(appliance.id, slot.id, totalMinutes);
+                                    }}
+                                  />
+                                  <span className="text-xs text-gray-500">m</span>
+                                </div>
                                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                                   {getTimeSlotDuration(slot)}
                                 </div>
@@ -440,14 +506,30 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
           </p>
         )}
         
-        <div className="mt-2 text-sm text-gray-600 flex items-center gap-4">
+        <div className="mt-2 text-sm text-gray-600 flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center">
             <CheckSquare className="h-4 w-4 text-orange-500 mr-1" />
-            <span>Critical loads</span>
+            <span>Critical loads (essential during power outages)</span>
           </div>
           <div className="flex items-center">
             <Moon className="h-4 w-4 text-blue-500 mr-1" />
             <span>Night-time loads</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+        <div className="flex items-start gap-2">
+          <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h5 className="text-sm font-medium text-blue-800 mb-1">💡 Tips for accurate calculation:</h5>
+            <ul className="text-xs text-blue-700 space-y-1">
+              <li>• Select the time slots when each appliance is typically used</li>
+              <li>• Use the duration inputs for appliances that run for less than the full time slot</li>
+              <li>• Mark critical loads that must continue during power outages</li>
+              <li>• Consider seasonal variations in appliance usage</li>
+              <li>• Use presets above for quick setup of common scenarios</li>
+            </ul>
           </div>
         </div>
       </div>

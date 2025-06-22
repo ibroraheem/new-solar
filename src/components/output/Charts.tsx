@@ -46,6 +46,11 @@ const Charts: React.FC<ChartsProps> = ({
     // Clean up existing charts
     destroyCharts();
     
+    // Find the worst month (lowest daily energy production)
+    const worstMonthData = pvgisData.monthly.reduce((worst, month) => 
+      month.pvout < worst.pvout ? month : worst
+    );
+    
     // Create monthly PVOUT chart
     if (monthlyChartRef.current) {
       const ctx = monthlyChartRef.current.getContext('2d');
@@ -53,13 +58,13 @@ const Charts: React.FC<ChartsProps> = ({
         const monthlyData: ChartJsData = {
           labels: monthNames,
           datasets: [{
-            label: 'Solar Radiation (kWh/m²/day)',
-            data: pvgisData.monthly.map(month => month.pvout / 30), // Convert back to daily values
+            label: 'Daily Solar Energy Production (kWh/day)',
+            data: pvgisData.monthly.map(month => month.pvout / 30), // Convert monthly to daily
             backgroundColor: pvgisData.monthly.map(month => 
-              month.pvout / 30 === worstMonthPvout ? 'rgba(239, 68, 68, 0.7)' : 'rgba(245, 158, 11, 0.7)'
+              month.pvout === worstMonthData.pvout ? 'rgba(239, 68, 68, 0.7)' : 'rgba(245, 158, 11, 0.7)'
             ),
             borderColor: pvgisData.monthly.map(month => 
-              month.pvout / 30 === worstMonthPvout ? 'rgb(239, 68, 68)' : 'rgb(245, 158, 11)'
+              month.pvout === worstMonthData.pvout ? 'rgb(239, 68, 68)' : 'rgb(245, 158, 11)'
             ),
             borderWidth: 1
           }]
@@ -78,11 +83,11 @@ const Charts: React.FC<ChartsProps> = ({
               tooltip: {
                 callbacks: {
                   title: (items) => monthNames[items[0].dataIndex],
-                  label: (item) => `Solar Radiation: ${(item.raw as number).toFixed(2)} kWh/m²/day`,
+                  label: (item) => `Daily Energy: ${(item.raw as number).toFixed(2)} kWh/day`,
                   footer: (items) => {
                     const index = items[0].dataIndex;
-                    const isWorstMonth = pvgisData.monthly[index].pvout / 30 === worstMonthPvout;
-                    return isWorstMonth ? 'Worst Month (Used for Sizing)' : '';
+                    const isWorstMonth = pvgisData.monthly[index].pvout === worstMonthData.pvout;
+                    return isWorstMonth ? 'Worst Month (Used for System Sizing)' : '';
                   }
                 }
               }
@@ -92,7 +97,7 @@ const Charts: React.FC<ChartsProps> = ({
                 beginAtZero: true,
                 title: {
                   display: true,
-                  text: 'kWh/m²/day'
+                  text: 'kWh/day'
                 }
               }
             }
@@ -114,7 +119,7 @@ const Charts: React.FC<ChartsProps> = ({
           labels: monthNames,
           datasets: [
             {
-              label: 'Estimated Generation (kWh/day)',
+              label: 'Solar Generation (kWh/day)',
               data: dailyGeneration,
               backgroundColor: 'rgba(16, 185, 129, 0.7)',
               borderColor: 'rgb(16, 185, 129)',
@@ -172,9 +177,9 @@ const Charts: React.FC<ChartsProps> = ({
         const actualAutonomyHours = (batteryCapacityKwh * dod * 24) / dailyEnergyDemand;
 
         const batteryData: ChartJsData = {
-          labels: ['Designed', 'Actual'],
+          labels: ['Designed Backup', 'Actual Autonomy'],
           datasets: [{
-            label: 'Hours of Autonomy',
+            label: 'Hours of Backup Power',
             data: [backupHours, actualAutonomyHours],
             backgroundColor: ['rgba(245, 158, 11, 0.7)', 'rgba(16, 185, 129, 0.7)'],
             borderColor: ['rgb(245, 158, 11)', 'rgb(16, 185, 129)'],
@@ -225,17 +230,17 @@ const Charts: React.FC<ChartsProps> = ({
         const excessEnergy = Math.max(0, annualGeneration - annualDemand);
 
         const utilizationData: ChartJsData = {
-          labels: ['Annual Energy'],
+          labels: ['Annual Energy Production'],
           datasets: [
             {
-              label: 'Used Energy (kWh)',
+              label: 'Energy Used (kWh/year)',
               data: [annualDemand],
               backgroundColor: 'rgba(16, 185, 129, 0.7)',
               borderColor: 'rgb(16, 185, 129)',
               borderWidth: 1
             },
             {
-              label: 'Excess Energy (kWh)',
+              label: 'Excess Energy (kWh/year)',
               data: [excessEnergy],
               backgroundColor: 'rgba(245, 158, 11, 0.7)',
               borderColor: 'rgb(245, 158, 11)',
@@ -256,7 +261,7 @@ const Charts: React.FC<ChartsProps> = ({
               },
               tooltip: {
                 callbacks: {
-                  label: (item) => `${item.dataset.label}: ${Math.round(item.raw as number)} kWh`
+                  label: (item) => `${item.dataset.label}: ${Math.round(item.raw as number)} kWh/year`
                 }
               }
             },
@@ -287,9 +292,9 @@ const Charts: React.FC<ChartsProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Monthly Solar Radiation</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Monthly Solar Energy Production</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Shows solar radiation throughout the year. The red bar indicates the worst month used for calculations.
+          Shows daily solar energy production throughout the year. The red bar indicates the worst month used for system sizing calculations.
           {isFallbackData && <span className="text-yellow-600"> (Using estimated data)</span>}
         </p>
         <div style={{ height: '300px' }}>
@@ -300,7 +305,7 @@ const Charts: React.FC<ChartsProps> = ({
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Solar Generation vs Energy Demand</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Compares estimated solar generation with your daily energy needs throughout the year.
+          Compares your system's estimated daily solar generation with your daily energy consumption throughout the year.
           {isFallbackData && <span className="text-yellow-600"> (Using estimated data)</span>}
         </p>
         <div style={{ height: '300px' }}>
@@ -309,9 +314,9 @@ const Charts: React.FC<ChartsProps> = ({
       </div>
       
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Battery Autonomy</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Battery Backup Performance</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Shows the designed backup hours compared to the actual hours of autonomy with the recommended battery.
+          Shows your desired backup hours compared to the actual hours of autonomy provided by the recommended battery system.
         </p>
         <div style={{ height: '300px' }}>
         <canvas ref={batteryChartRef}></canvas>
@@ -319,9 +324,9 @@ const Charts: React.FC<ChartsProps> = ({
       </div>
       
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">System Utilization</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Annual System Performance</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Displays the annual energy used vs excess energy produced by your system.
+          Displays the annual energy consumption vs excess energy production, showing your system's overall efficiency.
           {isFallbackData && <span className="text-yellow-600"> (Using estimated data)</span>}
         </p>
         <div style={{ height: '300px' }}>

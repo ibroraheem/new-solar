@@ -35,6 +35,7 @@ export interface PvgisData {
   monthly: {
     month: number;
     pvout: number;
+    eday: number; // Daily energy output for 1kWp system
   }[];
   annual: {
     pvout: number;
@@ -43,40 +44,70 @@ export interface PvgisData {
     latitude: number;
     longitude: number;
     elevation: number;
-    worstDayPvout: number;
+    worstDayPvout: number; // E_d value from worst month
   };
 }
 
 export interface SolarComponents {
-  systemVoltage: number;
-  inverterRating: number;
-  batteryType: string;
+  systemSize: {
+    kwp: number;
+    watts: number;
+    panels: number;
+    panelWatts: number;
+  };
+  inverter: {
+    watts: number;
+    voltage: number;
+    mppt: number;
+    maxPvInput: number;
+    price: number;
+    name: string;
+  };
   batteryConfiguration: {
+    type: string;
     capacityAh: number;
     series: number;
     parallel: number;
     totalBatteries: number;
+    price: number;
+    name: string;
   };
-  solarPanels: {
-    wattage: number;
-    count: number;
-    totalWattage: number;
-  };
-  chargeController: {
-    type: 'Built-in MPPT' | 'PWM';
-    rating: number;
-    count: number;
-  };
+  systemVoltage: number;
   cables: {
-    acSize: number;
-    dcSize: number;
+    size: string;
+    length: number;
+    price: number;
+    name: string;
   };
   breakers: {
-    acRating: number;
+    dc: {
+      size: string;
+      current: number;
+      voltage: string;
+      price: number;
+      name: string;
+    };
+    ac: {
+      size: string;
+      current: number;
+      voltage: string;
+      price: number;
+      name: string;
+    };
   };
-  otherComponents: {
-    spd: boolean;
-    avr: boolean;
+  solarPanels: {
+    watts: number;
+    quantity: number;
+    price: number;
+    name: string;
+  };
+  totalCost: number;
+  costBreakdown: {
+    inverter: number;
+    battery: number;
+    panels: number;
+    cables: number;
+    breakers: number;
   };
 }
 

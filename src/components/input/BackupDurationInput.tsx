@@ -1,5 +1,6 @@
 import React from 'react';
 import { Battery, Sun } from 'lucide-react';
+import { VALIDATION_CONSTANTS } from '../../utils/constants';
 
 interface BackupDurationInputProps {
   backupHours: number;
@@ -7,13 +8,13 @@ interface BackupDurationInputProps {
 }
 
 const BackupDurationInput: React.FC<BackupDurationInputProps> = ({ backupHours, onChange }) => {
-  // Ensure backupHours is within valid range
-  const validBackupHours = Math.max(8, Math.min(24, backupHours));
+  // Ensure backupHours is within valid range using centralized constants
+  const validBackupHours = Math.max(VALIDATION_CONSTANTS.MIN_BACKUP_HOURS, Math.min(VALIDATION_CONSTANTS.MAX_BACKUP_HOURS, backupHours));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
-    // Ensure the value is within the valid range
-    const validValue = Math.max(8, Math.min(24, value));
+    // Ensure the value is within the valid range using centralized constants
+    const validValue = Math.max(VALIDATION_CONSTANTS.MIN_BACKUP_HOURS, Math.min(VALIDATION_CONSTANTS.MAX_BACKUP_HOURS, value));
     onChange(validValue);
   };
 

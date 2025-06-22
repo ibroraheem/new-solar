@@ -1,8 +1,11 @@
 import { Handler } from '@netlify/functions';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-key-change-in-production';
 
 const handler: Handler = async (event) => {
   const headers = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || 'https://your-domain.netlify.app',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Content-Type': 'application/json',
@@ -30,38 +33,40 @@ const handler: Handler = async (event) => {
     // Extract the token from the Authorization header
     const token = authHeader.replace('Bearer ', '');
     
-    // Verify the token format
-    if (!token.match(/^[A-Za-z0-9+/=]+$/)) {
+    // Verify the JWT token
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      // Check if token is expired
+      if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Token expired' }),
+        };
+      }
+
+      // Token is valid
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ 
+          success: true,
+          message: 'Access granted',
+          user: {
+            email: decoded.userId,
+            reference: decoded.reference,
+            amount: decoded.amount
+          }
+        }),
+      };
+    } catch (jwtError) {
       return {
         statusCode: 401,
         headers,
-        body: JSON.stringify({ error: 'Invalid token format' }),
+        body: JSON.stringify({ error: 'Invalid token' }),
       };
     }
-
-    // Decode the token
-    const decodedToken = Buffer.from(token, 'base64').toString();
-    const [reference, timestamp] = decodedToken.split('_');
-
-    // Check if the token is expired (24 hours validity)
-    const tokenAge = Date.now() - parseInt(timestamp);
-    if (tokenAge > 24 * 60 * 60 * 1000) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Token expired' }),
-      };
-    }
-
-    // Token is valid
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ 
-        success: true,
-        message: 'Access granted'
-      }),
-    };
   } catch (error) {
     console.error('Access check error:', error);
     return {
