@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PvgisData } from '../types';
 import { NigerianRegion, getNigerianRegion } from '../utils/calculations';
+import axios from 'axios';
 
 interface MonthlyDataPoint {
   month: number;
@@ -99,95 +100,65 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
     setError(null);
     setIsFallbackData(false);
 
-    // Try multiple proxy strategies
+    // Try proxy servers
     for (let i = 0; i < PROXY_OPTIONS.length; i++) {
       const proxy = PROXY_OPTIONS[i];
       try {
-        console.log(`Attempting PVGIS fetch via proxy ${i + 1}: ${proxy}`);
-        
-        let url: string;
-        if (proxy === '/.netlify/functions/pvgis-proxy') {
-          // Netlify function
-          url = `${proxy}?lat=${latitude}&lon=${longitude}`;
-        } else {
-          // Public CORS proxy
-          const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?` +
-            `lat=${latitude}&lon=${longitude}` +
-            `&startyear=2020&endyear=2020` +
-            `&outputformat=json` +
-            `&pvtechchoice=crystSi` +
-            `&peakpower=1` +
-            `&loss=14` +
-            `&raddatabase=PVGIS-SARAH2` +
-            `&angle=35&aspect=0`;
-          url = proxy + encodeURIComponent(pvgisUrl);
-        }
-
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
+        const response = await axios.get(`${proxy}/pvgis`, {
+          params: {
+            lat: latitude,
+            lon: longitude,
+            outputformat: 'json',
+            pvtechchoice: 'crystSi',
+            mountingplace: 'building',
+            loss: 14,
+            angle: 0,
+            aspect: 0,
+            components: 1
           },
-          signal: AbortSignal.timeout(15000) // 15 second timeout
+          timeout: parseInt(process.env.PVGIS_TIMEOUT || '30000')
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json() as PvgisResponse;
-        console.log('PVGIS Response received via proxy', i + 1, ':', data);
-
-        // Validate response structure
-        if (!data || !data.outputs || !Array.isArray(data.outputs.monthly)) {
-          throw new Error('Invalid PVGIS data structure received');
-        }
-
-        // Transform the data to match our PvgisData type
-        const monthlyData: MonthlyDataPoint[] = data.outputs.monthly.map((month: PvgisMonthlyData) => {
-          if (typeof month.E_d !== 'number') {
-            throw new Error(`Invalid E_d value for month ${month.month}`);
+        if (response.data && response.data.outputs) {
+          const data = response.data;
+          
+          // Validate the response structure
+          if (!data.outputs.monthly || !Array.isArray(data.outputs.monthly)) {
+            throw new Error('Invalid PVGIS response structure');
           }
-          return {
-            month: month.month,
-            pvout: month.E_d * 30, // Convert daily to monthly values
-            eday: month.E_d // Store the daily value for 1kWp
+
+          // Calculate worst month E_d value
+          const worstMonth = data.outputs.monthly.reduce((worst: any, month: any) => 
+            month.pvout < worst.pvout ? month : worst
+          );
+
+          const pvgisData: PvgisData = {
+            monthly: data.outputs.monthly.map((month: any) => ({
+              month: month.month,
+              pvout: month.pvout,
+              eday: month.eday || (month.pvout / 30) // Use eday if available, otherwise calculate
+            })),
+            annual: {
+              pvout: data.outputs.annual.pvout
+            },
+            meta: {
+              latitude: data.meta.latitude,
+              longitude: data.meta.longitude,
+              elevation: data.meta.elevation,
+              worstDayPvout: worstMonth.eday || (worstMonth.pvout / 30)
+            }
           };
-        });
 
-        const transformedData: PvgisData = {
-          monthly: monthlyData.map(({ month, pvout, eday }: MonthlyDataPoint) => ({ 
-            month, 
-            pvout,
-            eday // Include the daily E_d value
-          })),
-          annual: {
-            pvout: data.outputs.monthly.reduce((sum: number, month: PvgisMonthlyData) => sum + month.E_d, 0) * 30 / 12
-          },
-          meta: {
-            latitude,
-            longitude,
-            elevation: 0,
-            worstDayPvout: data.worstMonth?.E_day || Math.min(...monthlyData.map(m => m.eday))
-          }
-        };
-
-        setLoading(false);
-        console.log('Successfully fetched PVGIS data via proxy', i + 1);
-        return transformedData;
-
-      } catch (err) {
-        console.warn(`Proxy ${i + 1} failed:`, err);
-        if (i === PROXY_OPTIONS.length - 1) {
-          // All proxies failed, use fallback data
-          throw err;
+          setLoading(false);
+          return pvgisData;
         }
-        // Continue to next proxy
+      } catch (err) {
+        // Continue to next proxy if this one fails
         continue;
       }
     }
 
-    // If we get here, all proxies failed
+    // If all proxies fail, use fallback data
     console.error('All PVGIS proxies failed, using fallback data');
     setError('Failed to fetch solar data from all sources. Using regional averages.');
     setIsFallbackData(true);
