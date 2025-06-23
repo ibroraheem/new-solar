@@ -39,6 +39,12 @@ const CostAnalysis: React.FC<CostAnalysisProps> = ({ components }) => {
       price: costBreakdown.breakers,
       description: `${components.breakers.dc.name} + ${components.breakers.ac.name}`,
       percentage: ((costBreakdown.breakers / totalCost) * 100).toFixed(1)
+    },
+    {
+      name: 'Surge Protector (DC)',
+      price: 18000,
+      description: 'DC Surge Protector (600V, Schneider)',
+      percentage: ((18000 / totalCost) * 100).toFixed(1)
     }
   ];
 
@@ -84,7 +90,8 @@ const CostAnalysis: React.FC<CostAnalysisProps> = ({ components }) => {
       <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <h3 className="font-semibold text-yellow-800 mb-2">Additional Costs (Not Included)</h3>
         <ul className="text-sm text-yellow-700 space-y-1">
-          <li>• Installation labor and mounting hardware</li>
+          <li>• Mounting hardware, combiner box, and installation labor are not included in the above prices.</li>
+          <li>• Other costs may arise depending on site conditions and installation requirements.</li>
           <li>• Electrical permits and inspections</li>
           <li>• Transportation and delivery</li>
           <li>• Maintenance and monitoring equipment</li>

@@ -73,9 +73,9 @@ const SystemOverview: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
             <div className="flex-1"></div>
             <div className="text-center flex-1">
-              <h1 className="text-4xl font-bold text-green-700 mb-4">Solar System Designer</h1>
+              <h1 className="text-4xl font-bold text-green-700 mb-4">Solar Mate</h1>
               <p className="text-lg text-gray-600">
-                Design your perfect solar power system with our advanced calculator
+                Smart solar sizing for Nigeria
               </p>
             </div>
             <div className="flex-1 flex justify-end">

@@ -176,7 +176,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
             <tr>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-gray-900">Protection Devices</div>
-                <div className="text-xs text-gray-500">Circuit breakers & surge protection</div>
+                <div className="text-xs text-gray-500">Circuit breakers</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">
@@ -196,6 +196,27 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-semibold text-gray-900">{formatPrice(components.costBreakdown.breakers)}</div>
+              </td>
+            </tr>
+
+            {/* Surge Protector */}
+            <tr>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm font-medium text-gray-900">Surge Protector (DC)</div>
+                <div className="text-xs text-gray-500">600V, Schneider</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-900">1 unit</div>
+                <div className="text-xs text-gray-500">Protects against voltage spikes</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-900">1</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-900">₦18,000</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm font-semibold text-gray-900">₦18,000</div>
               </td>
             </tr>
 
@@ -237,6 +258,9 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
             <span className="font-medium text-gray-700">Support:</span>
             <span className="text-gray-600 ml-2">24/7 technical support</span>
           </div>
+        </div>
+        <div className="mt-4 text-sm text-yellow-700">
+          <strong>Note:</strong> Mounting hardware, combiner box, and installation labor are not included in the above prices. Other costs may arise depending on site conditions and installation requirements.
         </div>
       </div>
     </div>

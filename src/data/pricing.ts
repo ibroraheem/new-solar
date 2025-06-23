@@ -240,6 +240,21 @@ export const CABLE_PRICING = [
   }
 ];
 
+// Surge protector pricing (per unit)
+export const SURGE_PROTECTOR_PRICING = [
+  {
+    id: 'sp-dc-600v',
+    name: 'DC Surge Protector (600V)',
+    capacity: '600V',
+    price: 18000, // Typical price per unit (includes markup)
+    unit: 'per unit',
+    brand: 'Schneider'
+  }
+];
+
+// Note: Mounting hardware, combiner box, and installation labor are not included in the pricing database.
+// Other costs may arise depending on site conditions and installation requirements.
+
 export const BREAKER_PRICING = [
   {
     id: 'breaker-16a-dc',

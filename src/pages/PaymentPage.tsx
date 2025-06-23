@@ -148,7 +148,7 @@ const PaymentPage: React.FC = () => {
             onClick={() => navigate('/')}
             className="text-green-600 hover:text-green-700 font-medium"
           >
-            ← Back to Solar Calculator
+            ← Back to Solar Mate
           </button>
         </div>
       </div>
