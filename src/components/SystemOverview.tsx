@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { usePayment } from '../context/PaymentContext';
 import { useNavigate } from 'react-router-dom';
-import { Crown } from 'lucide-react';
 import InputSection from './input/InputSection';
 import OutputSection from './output/OutputSection';
 import { usePvgisApi } from '../hooks/usePvgisApi';
@@ -20,7 +18,6 @@ const SystemOverview: React.FC = () => {
   const [showResults, setShowResults] = useState(false);
   const [calculationError, setCalculationError] = useState<string | null>(null);
   const { fetchPvgisData, loading, error, isFallbackData } = usePvgisApi();
-  const { hasPdfAccess } = usePayment();
   const navigate = useNavigate();
 
   const handleCalculate = async (params: {
@@ -76,17 +73,6 @@ const SystemOverview: React.FC = () => {
               <h1 className="text-5xl font-extrabold text-green-700 mb-2 drop-shadow-lg font-display animate-fade-in">SolarMate</h1>
               <p className="text-xl text-yellow-700 font-semibold mb-2 animate-fade-in">Smart Solar Sizing for Nigeria</p>
               <span className="inline-block text-xs font-semibold bg-green-800 bg-opacity-80 px-2 py-0.5 rounded-full text-yellow-200 shadow animate-fade-in">Made in Nigeria</span>
-            </div>
-            <div className="flex-1 flex justify-end">
-              {!hasPdfAccess && (
-                <button
-                  onClick={() => navigate('/upgrade')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-200"
-                >
-                  <Crown className="h-4 w-4 mr-2" />
-                  Download PDF Report
-                </button>
-              )}
             </div>
           </div>
           <div className="mt-4 mb-8 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded shadow animate-fade-in">
