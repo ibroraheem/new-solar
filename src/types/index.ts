@@ -60,7 +60,6 @@ export interface SolarComponents {
     voltage: number;
     mppt: number;
     maxPvInput: number;
-    price: number;
     name: string;
   };
   batteryConfiguration: {
@@ -69,13 +68,11 @@ export interface SolarComponents {
     series: number;
     parallel: number;
     totalBatteries: number;
-    price: number;
     name: string;
   };
   systemVoltage: number;
   cables: {
     size: string;
-    price: number;
     name: string;
   };
   breakers: {
@@ -83,30 +80,19 @@ export interface SolarComponents {
       size: string;
       current: number;
       voltage: string;
-      price: number;
       name: string;
     };
     ac: {
       size: string;
       current: number;
       voltage: string;
-      price: number;
       name: string;
     };
   };
   solarPanels: {
     watts: number;
     quantity: number;
-    price: number;
     name: string;
-  };
-  totalCost: number;
-  costBreakdown: {
-    inverter: number;
-    battery: number;
-    panels: number;
-    cables: number;
-    breakers: number;
   };
 }
 

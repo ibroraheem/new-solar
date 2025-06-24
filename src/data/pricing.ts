@@ -104,7 +104,7 @@ export const BATTERY_PRICING: ComponentPrice[] = [
     name: '2.86KWH Battery (12V) - Tubular',
     capacity: '2.86KWH',
     voltage: '12V',
-    price: 180000, // Final price (includes 20% markup)
+    price: 280000,
     category: 'battery',
     brand: 'Trojan',
     warranty: '3 Years',

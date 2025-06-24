@@ -141,7 +141,6 @@ function selectInverter(
   voltage: number;
   mppt: number;
   maxPvInput: number;
-  price: number;
   name: string;
 } {
   // Calculate peak power needed - use the higher of max load or calculated peak
@@ -193,7 +192,6 @@ function selectInverter(
     voltage,
     mppt,
     maxPvInput,
-    price: inverter.price,
     name: inverter.name
   };
 }
@@ -208,199 +206,114 @@ function selectBattery(
   series: number;
   parallel: number;
   totalBatteries: number;
-  price: number;
   name: string;
 } {
   // Calculate hourly demand and add buffer for efficiency losses
   const hourlyDemand = dailyEnergyDemand / 24; // Convert daily to hourly
   const energyNeeded = (hourlyDemand * backupHours * SYSTEM_CONSTANTS.PEAK_POWER_MARGIN) / EFFICIENCY_FACTOR;
 
-  // CORRECT: First try to find batteries that match the exact system voltage
-  const exactVoltageBatteries = BATTERY_PRICING.filter(bat => {
-    const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
-    return batVoltage === systemVoltage;
-  });
+  // Prefer lithium batteries first
+  const lithiumBatteries = BATTERY_PRICING.filter(bat => bat.name.toLowerCase().includes('lithium'));
+  const tubularBatteries = BATTERY_PRICING.filter(bat => bat.name.toLowerCase().includes('tubular'));
 
-  // If exact voltage batteries found, use them (no series configuration needed)
-  if (exactVoltageBatteries.length > 0) {
-    let bestConfig = {
-      battery: exactVoltageBatteries[0],
-      series: 1, // No series needed for exact voltage match
-      parallel: 1,
-      totalBatteries: 1,
-      totalPrice: exactVoltageBatteries[0].price,
-      totalCapacity: parseFloat(exactVoltageBatteries[0].capacity.replace('KWH', ''))
-    };
-
-    // Find the best exact voltage battery configuration
-    for (const battery of exactVoltageBatteries) {
-      const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
-      
-      // Calculate parallel needed to achieve required capacity
-      const parallel = Math.ceil(energyNeeded / batteryKwh);
-      
-      const totalBatteries = parallel; // No series, only parallel
-      const totalPrice = battery.price * totalBatteries;
-      const totalCapacity = batteryKwh * parallel;
-
-      // Check if this configuration meets requirements and is better than current best
-      // Prioritize parallel configurations when they're more cost-effective
-      if (totalCapacity >= energyNeeded && totalBatteries <= 8 && // Limit to 8 batteries max
-          (totalPrice < bestConfig.totalPrice || 
-           (totalPrice === bestConfig.totalPrice && parallel > bestConfig.parallel) || // Prefer more parallel connections
-           bestConfig.totalCapacity < energyNeeded)) {
-        bestConfig = {
-          battery,
-          series: 1,
-          parallel,
-          totalBatteries,
-          totalPrice,
-          totalCapacity
-        };
+  function findBestConfig(batteries: typeof BATTERY_PRICING) {
+    // Try to find best config for given battery type
+    const exactVoltageBatteries = batteries.filter(bat => {
+      const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
+      return batVoltage === systemVoltage;
+    });
+    let bestConfig = null;
+    if (exactVoltageBatteries.length > 0) {
+      for (const battery of exactVoltageBatteries) {
+        const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
+        const parallel = Math.ceil(energyNeeded / batteryKwh);
+        const totalBatteries = parallel;
+        const totalCapacity = batteryKwh * parallel;
+        if (totalCapacity >= energyNeeded && totalBatteries <= 8) {
+          bestConfig = {
+            battery,
+            series: 1,
+            parallel,
+            totalBatteries,
+            totalCapacity
+          };
+          break;
+        }
       }
     }
-
-    if (bestConfig.totalCapacity >= energyNeeded) {
-      // Calculate total system capacity in Ah (CORRECT: Total system capacity)
-      const totalSystemCapacityAh = (bestConfig.totalCapacity * 1000) / systemVoltage;
-
-      return {
-        type: bestConfig.battery.name.includes('Tubular') ? 'Tubular' : 'Lithium',
-        capacityAh: Math.round(totalSystemCapacityAh),
-        series: bestConfig.series,
-        parallel: bestConfig.parallel,
-        totalBatteries: bestConfig.totalBatteries,
-        price: bestConfig.totalPrice,
-        name: bestConfig.battery.name
-      };
-    }
-  }
-
-  // If no exact voltage batteries or they don't meet requirements, try series configuration
-  const availableBatteries = BATTERY_PRICING.filter(bat => {
-    const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
-    // Check if battery voltage can be configured to match system voltage
-    return systemVoltage % batVoltage === 0; // System voltage must be divisible by battery voltage
-  });
-
-  if (availableBatteries.length === 0) {
-    throw new Error(`No batteries found that can be configured for ${systemVoltage}V system`);
-  }
-
-  // Find the best battery configuration (series + parallel)
-  let bestConfig = {
-    battery: availableBatteries[0],
-      series: 1,
-      parallel: 1,
-    totalBatteries: 1,
-    totalPrice: availableBatteries[0].price,
-    totalCapacity: parseFloat(availableBatteries[0].capacity.replace('KWH', ''))
-  };
-
-  // Try different battery configurations to find the most cost-effective solution
-  for (const battery of availableBatteries) {
-    const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
-    const batteryVoltage = parseInt(battery.voltage?.replace('V', '') || '0');
-    
-    // Calculate series needed to achieve system voltage
-    const series = systemVoltage / batteryVoltage; // CORRECT: Direct division
-    
-    // Calculate parallel needed to achieve required capacity
-    const parallel = Math.ceil(energyNeeded / (batteryKwh * series));
-    
-    const totalBatteries = series * parallel;
-    const totalPrice = battery.price * totalBatteries;
-    const totalCapacity = batteryKwh * series * parallel;
-
-    // Check if this configuration meets requirements and is better than current best
-    if (totalCapacity >= energyNeeded && totalBatteries <= 8 && // Limit to 8 batteries max
-        (totalPrice < bestConfig.totalPrice || 
-         (totalPrice === bestConfig.totalPrice && parallel > bestConfig.parallel) || // Prefer more parallel connections
-         bestConfig.totalCapacity < energyNeeded)) {
-      bestConfig = {
-        battery,
-        series,
-        parallel,
-        totalBatteries,
-        totalPrice,
-        totalCapacity
-      };
-    }
-  }
-
-  // If still no configuration meets requirements, try parallel-only with exact voltage batteries
-  if (bestConfig.totalCapacity < energyNeeded && exactVoltageBatteries.length > 0) {
-    console.warn(`Exact voltage batteries don't meet capacity requirement (${energyNeeded.toFixed(1)}kWh needed). Using parallel configuration.`);
-    
-    // Find the best parallel configuration with exact voltage batteries
-    for (const battery of exactVoltageBatteries) {
-      const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
-      
-      // Calculate parallel needed to achieve required capacity
-      const parallel = Math.ceil(energyNeeded / batteryKwh);
-      
-      const totalBatteries = parallel; // No series, only parallel
-      const totalPrice = battery.price * totalBatteries;
-      const totalCapacity = batteryKwh * parallel;
-
-      // Check if this configuration is better than current best (even if it doesn't meet full requirement)
-      if (totalBatteries <= 8 && // Limit to 8 batteries max
-          (totalPrice < bestConfig.totalPrice || bestConfig.totalCapacity < energyNeeded)) {
-        bestConfig = {
-          battery,
-          series: 1,
-          parallel,
-          totalBatteries,
-          totalPrice,
-          totalCapacity
-        };
+    if (!bestConfig) {
+      // Try series config
+      const availableBatteries = batteries.filter(bat => {
+        const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
+        return systemVoltage % batVoltage === 0;
+      });
+      for (const battery of availableBatteries) {
+        const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
+        const batteryVoltage = parseInt(battery.voltage?.replace('V', '') || '0');
+        const series = systemVoltage / batteryVoltage;
+        const parallel = Math.ceil(energyNeeded / (batteryKwh * series));
+        const totalBatteries = series * parallel;
+        const totalCapacity = batteryKwh * series * parallel;
+        if (totalCapacity >= energyNeeded && totalBatteries <= 8) {
+          bestConfig = {
+            battery,
+            series,
+            parallel,
+            totalBatteries,
+            totalCapacity
+          };
+          break;
+        }
       }
     }
+    return bestConfig;
   }
 
-  if (bestConfig.totalCapacity < energyNeeded) {
-    throw new Error(`Cannot meet ${energyNeeded.toFixed(1)}kWh requirement with available batteries. Maximum available: ${bestConfig.totalCapacity.toFixed(1)}kWh`);
+  let bestConfig = findBestConfig(lithiumBatteries);
+  let type = 'Lithium';
+  if (!bestConfig) {
+    bestConfig = findBestConfig(tubularBatteries);
+    type = 'Tubular';
   }
-
-  // Calculate total system capacity in Ah (CORRECT: Total system capacity)
+  if (!bestConfig) {
+    throw new Error('Cannot meet battery requirement with available batteries.');
+  }
   const totalSystemCapacityAh = (bestConfig.totalCapacity * 1000) / systemVoltage;
-
   return {
-    type: bestConfig.battery.name.includes('Tubular') ? 'Tubular' : 'Lithium',
-    capacityAh: Math.round(totalSystemCapacityAh), // CORRECT: Total system capacity
+    type,
+    capacityAh: Math.round(totalSystemCapacityAh),
     series: bestConfig.series,
     parallel: bestConfig.parallel,
     totalBatteries: bestConfig.totalBatteries,
-    price: bestConfig.totalPrice,
     name: bestConfig.battery.name
   };
 }
 
-function selectPanels(requiredKwp: number): {
+function selectPanels(requiredKwp: number, inverterWatts: number): {
   wattage: number;
   count: number;
   totalWattage: number;
-  price: number;
   name: string;
 } {
   // Select panel size based on system capacity
   const panelSize = PANEL_SIZES.find(p => requiredKwp <= p.maxSystemKw) || PANEL_SIZES[PANEL_SIZES.length - 1];
-  
   // Find panel in pricing database
   const panel = SOLAR_PANEL_PRICING.find(p => p.capacity === `${panelSize.watts}W`);
-  
   if (!panel) {
     throw new Error(`No pricing found for ${panelSize.watts}W panel`);
   }
-  
   // Calculate number of panels needed
-  const panelCount = Math.ceil((requiredKwp * 1000) / panelSize.watts);
-  
+  let panelWatts = requiredKwp * 1000;
+  // Clip panel wattage at 120% of inverter capacity
+  const maxPanelWatts = inverterWatts * 1.2;
+  if (panelWatts > maxPanelWatts) {
+    panelWatts = maxPanelWatts;
+  }
+  const panelCount = Math.ceil(panelWatts / panelSize.watts);
   return {
     wattage: panelSize.watts,
     count: panelCount,
     totalWattage: panelSize.watts * panelCount,
-    price: panel.price * panelCount,
     name: panel.name
   };
 }
@@ -445,68 +358,30 @@ export function calculateSolarComponents(
     const inverter = selectInverter(dailyEnergyDemand, maxLoad, requiredPanelWatts);
     const systemVoltage = inverter.voltage;
     const battery = selectBattery(dailyEnergyDemand, systemVoltage, backupHours);
-    const panels = selectPanels(requiredKwp);
-
-    // Calculate cable requirements using pricing database
-    // CORRECT: Calculate actual DC current from panels with proper voltage
-    const panelVoltage = 24; // Typical panel voltage (Vmp) - should be configurable
-    const maxDcCurrent = (panels.totalWattage / panelVoltage) * SYSTEM_CONSTANTS.DC_SAFETY_MARGIN;
-    
-    // CORRECT: Cable sizing based on current carrying capacity and voltage drop
-    // Consider voltage drop: 3% maximum for DC circuits
-    const maxVoltageDrop = panelVoltage * 0.03;
-    const cableLength = 20; // Estimated cable length in meters
-    
-    // Calculate minimum cable size based on current and voltage drop
-    let cableSize: string;
-    if (maxDcCurrent <= 20) {
-      cableSize = '6mm²'; // Good for up to 20A with low voltage drop
-    } else if (maxDcCurrent <= 32) {
-      cableSize = '10mm²'; // Good for up to 32A
-    } else if (maxDcCurrent <= 50) {
-      cableSize = '16mm²'; // Good for up to 50A
-    } else if (maxDcCurrent <= 80) {
-      cableSize = '25mm²'; // Good for up to 80A
-    } else {
-      cableSize = '35mm²'; // For very high current systems
-    }
-
-    // Recommend cable size only, do not include length or price in calculation
-    const cable = CABLE_PRICING.find(c => c.capacity === cableSize);
+    const panels = selectPanels(requiredKwp, inverter.watts);
 
     // Calculate breaker requirements using pricing database
-    // CORRECT: DC breaker sizing with proper safety margins
+    const panelVoltage = 24; // Typical panel voltage (Vmp) - should be configurable
+    const maxDcCurrent = (panels.totalWattage / panelVoltage) * SYSTEM_CONSTANTS.DC_SAFETY_MARGIN;
     const dcBreakerRating = calculateDcBreakerRating(maxDcCurrent);
     let dcBreaker = getBreakerByRating(`${dcBreakerRating}A`, '500VDC');
-    
-    // CORRECT: AC breaker sizing based on inverter output current
     const acOutputCurrent = (inverter.watts / SYSTEM_CONSTANTS.AC_VOLTAGE) * SYSTEM_CONSTANTS.AC_SAFETY_MARGIN;
     const acBreakerRating = acOutputCurrent <= 16 ? '16A' : acOutputCurrent <= 32 ? '32A' : '63A';
     let acBreaker = getBreakerByRating(acBreakerRating, '230VAC');
-    
-    // If exact breakers not found, use fallback options
     if (!dcBreaker) {
-      console.warn(`DC breaker ${dcBreakerRating}A not found, using 63A as fallback`);
       const fallbackDcBreaker = getBreakerByRating('63A', '500VDC');
       if (!fallbackDcBreaker) {
         throw new Error('No suitable DC breakers found in pricing database');
       }
       dcBreaker = fallbackDcBreaker;
     }
-    
     if (!acBreaker) {
-      console.warn(`AC breaker ${acBreakerRating} not found, using 32A as fallback`);
       const fallbackAcBreaker = getBreakerByRating('32A', '230VAC');
       if (!fallbackAcBreaker) {
         throw new Error('No suitable AC breakers found in pricing database');
       }
       acBreaker = fallbackAcBreaker;
     }
-    
-    const totalBreakerPrice = dcBreaker.price + acBreaker.price;
-
-    // Calculate total system cost (exclude cable price)
-    const totalSystemCost = inverter.price + battery.price + panels.price + totalBreakerPrice;
 
     return {
       systemSize: {
@@ -520,7 +395,6 @@ export function calculateSolarComponents(
         voltage: inverter.voltage,
         mppt: inverter.mppt,
         maxPvInput: inverter.maxPvInput,
-        price: inverter.price,
         name: inverter.name
       },
       batteryConfiguration: {
@@ -529,45 +403,32 @@ export function calculateSolarComponents(
         series: battery.series,
         parallel: battery.parallel,
         totalBatteries: battery.totalBatteries,
-        price: battery.price,
         name: battery.name
       },
       systemVoltage: systemVoltage,
       cables: {
-        size: cableSize,
-        price: 0, // Set price to 0 or omit
-        name: cable ? cable.name : cableSize
+        size: '',
+        name: ''
       },
       breakers: {
         dc: {
           size: `${dcBreakerRating}A-DC`,
           current: dcBreakerRating,
           voltage: dcBreaker.voltage,
-          price: dcBreaker.price,
           name: dcBreaker.name
         },
         ac: {
           size: `${acBreaker.capacity}-AC`,
           current: parseInt(acBreaker.capacity),
           voltage: acBreaker.voltage,
-          price: acBreaker.price,
           name: acBreaker.name
         }
       },
       solarPanels: {
         watts: panels.wattage,
         quantity: panels.count,
-        price: panels.price,
         name: panels.name
-      },
-      costBreakdown: {
-        inverter: inverter.price,
-        battery: battery.price,
-        panels: panels.price,
-        cables: 0, // Set cable cost to 0
-        breakers: totalBreakerPrice
-      },
-      totalCost: totalSystemCost
+      }
     };
   } catch (error) {
     console.error('Error calculating solar components:', error);

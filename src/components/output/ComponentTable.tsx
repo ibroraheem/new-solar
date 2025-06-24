@@ -32,9 +32,9 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900">System Components & Pricing</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Bill of Materials (BOM)</h2>
         <p className="text-sm text-gray-600 mt-1">
-          Complete breakdown of all components with current market prices
+          Complete breakdown of all components
         </p>
       </div>
 
@@ -50,12 +50,6 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Quantity
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Unit Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Price
               </th>
             </tr>
           </thead>
@@ -76,12 +70,6 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-blue-800">1 System</div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-blue-800">-</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-semibold text-blue-900">{formatPrice(components.totalCost)}</div>
-              </td>
             </tr>
 
             {/* Inverter */}
@@ -98,12 +86,6 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">1</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{formatPrice(components.inverter.price)}</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-semibold text-gray-900">{formatPrice(components.costBreakdown.inverter)}</div>
               </td>
             </tr>
 
@@ -122,12 +104,6 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">{components.batteryConfiguration.totalBatteries}</div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{formatPrice(components.batteryConfiguration.price / components.batteryConfiguration.totalBatteries)}</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-semibold text-gray-900">{formatPrice(components.costBreakdown.battery)}</div>
-              </td>
             </tr>
 
             {/* Solar Panels */}
@@ -143,12 +119,6 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">{components.solarPanels.quantity}</div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{formatPrice(components.solarPanels.price / components.solarPanels.quantity)}</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-semibold text-gray-900">{formatPrice(components.costBreakdown.panels)}</div>
-              </td>
             </tr>
 
             {/* Cables */}
@@ -163,12 +133,6 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">-</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">-</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-semibold text-gray-900">-</div>
               </td>
             </tr>
 
@@ -189,14 +153,6 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">2</div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">
-                  {formatPrice(components.breakers.dc.price)} + {formatPrice(components.breakers.ac.price)}
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-semibold text-gray-900">{formatPrice(components.costBreakdown.breakers)}</div>
-              </td>
             </tr>
 
             {/* Surge Protector */}
@@ -212,12 +168,6 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">1</div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">₦18,000</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-semibold text-gray-900">₦18,000</div>
-              </td>
             </tr>
 
             {/* Total Row */}
@@ -227,16 +177,9 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-green-800">Complete System</div>
-                <div className="text-xs text-green-600">Including 20% markup</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-green-800">-</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-green-800">-</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-lg font-bold text-green-900">{formatPrice(components.totalCost)}</div>
               </td>
             </tr>
           </tbody>
@@ -261,6 +204,12 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
         </div>
         <div className="mt-4 text-sm text-yellow-700">
           <strong>Note:</strong> Cable prices are not included in the calculation. Only the recommended cable size and length are shown. Mounting hardware and installation labor are not included in the above prices. Other costs may arise depending on site conditions and installation requirements.
+        </div>
+        <div className="mt-4 text-sm text-yellow-700">
+          <strong>For pricing and total cost, contact us for a quote or further enquiries.</strong>
+        </div>
+        <div className="mt-4 text-sm text-yellow-700">
+          <a href="https://wa.me/2349066730744" className="text-blue-500 hover:text-blue-700">Contact Us via WhatsApp</a>
         </div>
       </div>
     </div>

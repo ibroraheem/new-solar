@@ -44,14 +44,23 @@ const PresetSelector: React.FC<PresetSelectorProps> = ({
       ]
     }));
 
-    // Merge with existing appliances, avoiding duplicates
-    const existingNames = existingAppliances.map(a => a.name.toLowerCase());
-    const newAppliances = fullAppliances.filter(a => 
-      !existingNames.includes(a.name.toLowerCase())
-    );
+    // Merge with existing appliances: if exists, update and select; if not, add
+    const updatedAppliances = [...existingAppliances];
+    fullAppliances.forEach(presetApp => {
+      const idx = updatedAppliances.findIndex(a => a.name.toLowerCase() === presetApp.name.toLowerCase());
+      if (idx !== -1) {
+        // Update existing appliance: select and update properties
+        updatedAppliances[idx] = {
+          ...updatedAppliances[idx],
+          ...presetApp,
+          isSelected: true
+        };
+      } else {
+        updatedAppliances.push(presetApp);
+      }
+    });
 
-    const mergedAppliances = [...existingAppliances, ...newAppliances];
-    onPresetSelect(mergedAppliances);
+    onPresetSelect(updatedAppliances);
     setSelectedPreset(preset.id);
   };
 
