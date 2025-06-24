@@ -204,13 +204,26 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
     return `${slot.start.toString().padStart(2, '0')}:00-${slot.end.toString().padStart(2, '0')}:00 (${hours}h max)`;
   };
 
+  const handlePresetAndCalculate = (newAppliances: Appliance[]) => {
+    // Set default critical loads for common appliances
+    const criticalKeywords = ['fan', 'fridge', 'refrigerator', 'led', 'bulb', 'light'];
+    const updated = newAppliances.map(a => {
+      const name = a.name.toLowerCase();
+      const isCritical = criticalKeywords.some(keyword => name.includes(keyword));
+      return { ...a, isCritical };
+    });
+    onAppliancesChange(updated);
+    const totalEnergy = calculateTotalEnergy(updated);
+    onTotalEnergyChange(totalEnergy);
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Appliance-based Calculator</h3>
       
       {/* Preset Selector */}
       <PresetSelector 
-        onPresetSelect={onAppliancesChange}
+        onPresetSelect={handlePresetAndCalculate}
         existingAppliances={appliances}
       />
       
@@ -392,8 +405,8 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
                   <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Daily
                   </th>
-                  <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Critical
+                  <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" title="Mark appliances as critical loads (must run during outages)" aria-label="Critical Load (must run during outages)">
+                    Critical <span className="ml-1 text-xs text-blue-500 cursor-help" aria-hidden="true">?</span>
                   </th>
                 </tr>
               </thead>
@@ -488,6 +501,8 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
                         className={`${
                           appliance.isCritical ? 'text-orange-500' : 'text-gray-300'
                         } hover:text-orange-600`}
+                        title="Critical load"
+                        aria-label={appliance.isCritical ? "This is a critical load" : "This is not a critical load"}
                       >
                         <CheckSquare className="h-5 w-5" />
                       </button>
@@ -523,6 +538,10 @@ const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
             <span>Night-time loads</span>
           </div>
         </div>
+      </div>
+      
+      <div className="mt-2 text-xs text-blue-700">
+        <strong>What is a critical load?</strong> Critical loads are appliances that must remain powered during outages (e.g., lights, fans, fridge). Installers can adjust this for advanced setups.
       </div>
       
       <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">

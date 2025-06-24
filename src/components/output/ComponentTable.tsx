@@ -87,7 +87,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
             {/* Inverter */}
             <tr>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">Inverter</div>
+                <div className="text-sm font-medium text-gray-900">Inverter <span title="Converts DC from solar/battery to AC for your appliances" className="ml-1 text-xs text-blue-500 cursor-help" aria-label="What is an inverter?">?</span></div>
                 <div className="text-xs text-gray-500">{components.inverter.name}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -110,7 +110,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
             {/* Battery System */}
             <tr>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">Battery System</div>
+                <div className="text-sm font-medium text-gray-900">Battery System <span title="The battery system stores energy from solar panels and provides power to your appliances" className="ml-1 text-xs text-blue-500 cursor-help" aria-label="What is a battery system?">?</span></div>
                 <div className="text-xs text-gray-500">{components.batteryConfiguration.name}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -133,7 +133,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
             {/* Solar Panels */}
             <tr>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">Solar Panels</div>
+                <div className="text-sm font-medium text-gray-900">Solar Panels <span title="The solar panels convert sunlight into electricity" className="ml-1 text-xs text-blue-500 cursor-help" aria-label="What are solar panels?">?</span></div>
                 <div className="text-xs text-gray-500">{components.solarPanels.name}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -154,7 +154,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
             {/* Cables */}
             <tr>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">Cables & Wiring</div>
+                <div className="text-sm font-medium text-gray-900">Cables & Wiring <span title="The cables and wiring connect the components of your solar system" className="ml-1 text-xs text-blue-500 cursor-help" aria-label="What are cables and wiring?">?</span></div>
                 <div className="text-xs text-gray-500">{components.cables.name}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -175,7 +175,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
             {/* Protection Devices */}
             <tr>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">Protection Devices</div>
+                <div className="text-sm font-medium text-gray-900">Protection Devices <span title="The protection devices safeguard your solar system" className="ml-1 text-xs text-blue-500 cursor-help" aria-label="What are protection devices?">?</span></div>
                 <div className="text-xs text-gray-500">Circuit breakers</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -202,7 +202,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
             {/* Surge Protector */}
             <tr>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">Surge Protector (DC)</div>
+                <div className="text-sm font-medium text-gray-900">Surge Protector (DC) <span title="The surge protector protects your solar system from voltage spikes" className="ml-1 text-xs text-blue-500 cursor-help" aria-label="What is a surge protector?">?</span></div>
                 <div className="text-xs text-gray-500">600V, Schneider</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">

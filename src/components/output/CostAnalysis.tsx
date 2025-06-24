@@ -6,6 +6,8 @@ interface CostAnalysisProps {
   components: SolarComponents;
 }
 
+const PRICE_PER_KWH_NGN = 225;
+
 const CostAnalysis: React.FC<CostAnalysisProps> = ({ components }) => {
   const { costBreakdown, totalCost } = components;
 
@@ -41,6 +43,14 @@ const CostAnalysis: React.FC<CostAnalysisProps> = ({ components }) => {
       percentage: ((18000 / totalCost) * 100).toFixed(1)
     }
   ];
+
+  const dailyEnergy = components ? (components.systemSize.kwp * 24) : 0;
+  const estimatedMonthlySavings = (components ? components.costBreakdown.inverter + components.costBreakdown.battery + components.costBreakdown.panels : 0) > 0
+    ? ((components.costBreakdown.inverter + components.costBreakdown.battery + components.costBreakdown.panels) / (components.totalCost / (365 * 5)))
+    : 0;
+  const monthlySolarKwh = (components ? components.systemSize.kwp * 30 : 0);
+  const monthlySavings = (components ? components.systemSize.kwp * 30 * PRICE_PER_KWH_NGN : 0);
+  const paybackPeriod = components && components.totalCost > 0 ? (components.totalCost / (monthlySavings > 0 ? monthlySavings : 1)) : 0;
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -100,13 +110,14 @@ const CostAnalysis: React.FC<CostAnalysisProps> = ({ components }) => {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-blue-700">Estimated monthly savings:</p>
-            <p className="font-semibold text-blue-900">₦15,000 - ₦25,000</p>
+            <p className="font-semibold text-blue-900">₦{monthlySavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
           </div>
           <div>
             <p className="text-blue-700">Payback period:</p>
-            <p className="font-semibold text-blue-900">3-5 years</p>
+            <p className="font-semibold text-blue-900">{paybackPeriod.toFixed(1)} years</p>
           </div>
         </div>
+        <p className="text-xs text-blue-500 mt-1">(Assumes grid price: ₦225/kWh)</p>
       </div>
 
       {/* Payment Options */}
