@@ -152,10 +152,29 @@ function selectInverter(
   const peakPowerNeeded = Math.max(calculatedPeakPower, actualMaxLoad);
 
   // Use pricing database to find suitable inverter
-  const inverter = getInverterByWatts(peakPowerNeeded);
+  let inverter = getInverterByWatts(peakPowerNeeded);
+
+  // If required PV exceeds 120% of inverter, pick next available inverter (not too ridiculous)
+  const originalInverter = inverter;
+  const maxAllowedOversize = 2.0; // Do not pick inverter more than 2x original size
+  let inverterKva = inverter ? parseFloat(inverter.capacity.replace('KVA', '')) : 0;
+  let inverterWatts = inverterKva * 1000;
+  while (inverter && (requiredPanelWatts > inverterWatts * 1.2)) {
+    // Find next bigger inverter
+    const nextKva = inverterKva + 1;
+    inverter = INVERTER_PRICING.find(inv => parseFloat(inv.capacity.replace('KVA', '')) >= nextKva);
+    if (inverter) {
+      inverterKva = parseFloat(inverter.capacity.replace('KVA', ''));
+      inverterWatts = inverterKva * 1000;
+      // Stop if next inverter is more than 2x the original size
+      if (originalInverter && (inverterKva > parseFloat(originalInverter.capacity.replace('KVA', '')) * maxAllowedOversize)) {
+        break;
+      }
+    }
+  }
 
   if (!inverter) {
-    throw new Error(`No suitable inverter found for ${peakPowerNeeded.toFixed(0)}W peak power requirement (Max Load: ${actualMaxLoad}W, Calculated Peak: ${calculatedPeakPower.toFixed(0)}W)`);
+    throw new Error(`No suitable inverter found for ${peakPowerNeeded.toFixed(0)}W peak power requirement and required PV input (${requiredPanelWatts}W)`);
   }
 
   // Convert KVA to watts
@@ -163,29 +182,25 @@ function selectInverter(
   const watts = kva * 1000;
   
   // CORRECT: Assign voltage based on real inverter specifications
-  // Small systems (≤2KVA): 12V, Medium systems (≤4.2KVA): 24V, Large systems (>4.2KVA): 48V
-  // This follows standard solar inverter voltage conventions
   let voltage: number;
   if (kva <= 2) {
-    voltage = 12; // 12V for small residential systems
+    voltage = 12;
   } else if (kva <= 4.2) {
-    voltage = 24; // 24V for medium residential systems
+    voltage = 24;
   } else {
-    voltage = 48; // 48V for larger residential/commercial systems
+    voltage = 48;
   }
   
-  // CORRECT: MPPT current ratings based on voltage and typical inverter specs
   let mppt: number;
   if (voltage === 12) {
-    mppt = 80; // 80A for 12V systems
+    mppt = 80;
   } else if (voltage === 24) {
-    mppt = 100; // 100A for 24V systems
+    mppt = 100;
   } else {
-    mppt = 120; // 120A for 48V systems
+    mppt = 120;
   }
   
-  // CORRECT: Max PV input typically 1.2-1.5x inverter capacity for proper oversizing
-  const maxPvInput = watts * 1.3; // 30% oversizing allowance
+  const maxPvInput = watts * 1.2;
 
   return {
     watts,
@@ -304,7 +319,7 @@ function selectPanels(requiredKwp: number, inverterWatts: number): {
   }
   // Calculate number of panels needed
   let panelWatts = requiredKwp * 1000;
-  // Clip panel wattage at 120% of inverter capacity
+  // Cap panel wattage at 120% of inverter capacity
   const maxPanelWatts = inverterWatts * 1.2;
   if (panelWatts > maxPanelWatts) {
     panelWatts = maxPanelWatts;
@@ -342,7 +357,8 @@ export function calculateSolarComponents(
       throw new Error(`Calculated daily energy demand (${dailyEnergyDemand.toFixed(1)}kWh) is outside the supported range of ${MIN_DAILY_ENERGY}-${MAX_DAILY_ENERGY} kWh. Please adjust your appliance selection.`);
     }
 
-    const requiredKwp = dailyEnergyDemand / (worstMonthPvout * SYSTEM_CONSTANTS.SOLAR_EFFICIENCY);
+    // Add 10% margin to requiredKwp so solar generation always exceeds demand
+    const requiredKwp = (dailyEnergyDemand / (worstMonthPvout * SYSTEM_CONSTANTS.SOLAR_EFFICIENCY)) * 1.1;
     const requiredPanelWatts = requiredKwp * 1000;
 
     // Check system size limit and throw error if exceeded
