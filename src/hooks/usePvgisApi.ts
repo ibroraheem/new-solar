@@ -139,7 +139,7 @@ export const usePvgisApi = (): UsePvgisApiReturn => {
               eday: month.E_d // Include the daily E_d value
             })),
         annual: {
-              pvout: data.outputs.annual?.pvout || (data.outputs.monthly.reduce((sum, month) => sum + month.E_d, 0) * 30 / 12)
+              pvout: data.outputs.annual?.pvout || (data.outputs.monthly.reduce((sum: number, month: PvgisMonthlyData) => sum + month.E_d, 0) * 30 / 12)
         },
         meta: {
               latitude: data.meta?.latitude || latitude,

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Home, Users, Mountain, Briefcase, Zap, Check } from 'lucide-react';
 import { Appliance } from '../../types';
-import { appliancePresets, AppliancePreset } from '../../data/appliancePresets';
+import { appliancePresets } from '../../data/appliances';
 
 interface PresetSelectorProps {
   onPresetSelect: (appliances: Appliance[]) => void;
@@ -14,22 +13,22 @@ const PresetSelector: React.FC<PresetSelectorProps> = ({
 }) => {
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
 
-  const getCategoryIcon = (category: AppliancePreset['category']) => {
-    switch (category) {
-      case 'basic':
-        return <Home className="h-4 w-4" />;
-      case 'family':
-        return <Users className="h-4 w-4" />;
-      case 'off-grid':
-        return <Mountain className="h-4 w-4" />;
-      case 'business':
-        return <Briefcase className="h-4 w-4" />;
+  const getCategoryIcon = (presetId: string) => {
+    switch (presetId) {
+      case 'basic-home':
+        return '🏠';
+      case 'family-home':
+        return '👨‍👩‍👧‍👦';
+      case 'small-office':
+        return '💼';
+      default:
+        return '🔌';
     }
   };
 
-  const handlePresetSelect = (preset: AppliancePreset) => {
+  const handlePresetSelect = (preset: any) => {
     // Convert preset appliances to full Appliance objects
-    const fullAppliances: Appliance[] = preset.appliances.map((appliance, index) => ({
+    const fullAppliances: Appliance[] = preset.appliances.map((appliance: any, index: number) => ({
       id: `preset-${preset.id}-${index}`,
       name: appliance.name || '',
       watts: appliance.watts || 0,
@@ -37,7 +36,7 @@ const PresetSelector: React.FC<PresetSelectorProps> = ({
       isSelected: true,
       isCritical: appliance.isCritical || false,
       category: appliance.category || 'home',
-      timeSlots: [
+      timeSlots: appliance.timeSlots || [
         { id: '1', name: 'morning', start: 6, end: 12, selected: false },
         { id: '2', name: 'afternoon', start: 12, end: 17, selected: false },
         { id: '3', name: 'evening', start: 17, end: 22, selected: false },
@@ -57,16 +56,16 @@ const PresetSelector: React.FC<PresetSelectorProps> = ({
   };
 
   const categories = [
-    { key: 'basic', name: 'Basic', icon: <Home className="h-4 w-4" /> },
-    { key: 'family', name: 'Family', icon: <Users className="h-4 w-4" /> },
-    { key: 'off-grid', name: 'Off-Grid', icon: <Mountain className="h-4 w-4" /> },
-    { key: 'business', name: 'Business', icon: <Briefcase className="h-4 w-4" /> },
+    { key: 'basic', name: 'Basic', icon: '🏠' },
+    { key: 'family', name: 'Family', icon: '👨‍👩‍👧‍👦' },
+    { key: 'off-grid', name: 'Off-Grid', icon: '🏔' },
+    { key: 'business', name: 'Business', icon: '💼' },
   ];
 
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mb-4">
       <div className="flex items-center gap-2 mb-3">
-        <Zap className="h-5 w-5 text-green-600" />
+        <span className="text-green-600">⚡</span>
         <h4 className="text-sm font-medium text-gray-900">Quick Setup Presets</h4>
       </div>
       
@@ -83,11 +82,11 @@ const PresetSelector: React.FC<PresetSelectorProps> = ({
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
-                {getCategoryIcon(preset.category)}
+                {getCategoryIcon(preset.id)}
                 <span className="font-medium text-sm">{preset.name}</span>
               </div>
               {selectedPreset === preset.id && (
-                <Check className="h-4 w-4 text-green-600" />
+                <span className="text-green-600">✔️</span>
               )}
             </div>
             <p className="text-xs text-gray-600 mb-2">{preset.description}</p>

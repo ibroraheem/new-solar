@@ -290,8 +290,8 @@ function selectBattery(
   // Find the best battery configuration (series + parallel)
   let bestConfig = {
     battery: availableBatteries[0],
-    series: 1,
-    parallel: 1,
+      series: 1,
+      parallel: 1,
     totalBatteries: 1,
     totalPrice: availableBatteries[0].price,
     totalCapacity: parseFloat(availableBatteries[0].capacity.replace('KWH', ''))
@@ -454,7 +454,7 @@ export function calculateSolarComponents(
     
     // CORRECT: Cable sizing based on current carrying capacity and voltage drop
     // Consider voltage drop: 3% maximum for DC circuits
-    const maxVoltageDrop = panelVoltage * 0.03; // 3% voltage drop
+    const maxVoltageDrop = panelVoltage * 0.03;
     const cableLength = 20; // Estimated cable length in meters
     
     // Calculate minimum cable size based on current and voltage drop
@@ -471,11 +471,8 @@ export function calculateSolarComponents(
       cableSize = '35mm²'; // For very high current systems
     }
 
+    // Recommend cable size only, do not include length or price in calculation
     const cable = CABLE_PRICING.find(c => c.capacity === cableSize);
-    if (!cable) {
-      throw new Error(`No pricing found for ${cableSize} cable`);
-    }
-    const cablePrice = cable.price * cableLength;
 
     // Calculate breaker requirements using pricing database
     // CORRECT: DC breaker sizing with proper safety margins
@@ -508,8 +505,8 @@ export function calculateSolarComponents(
     
     const totalBreakerPrice = dcBreaker.price + acBreaker.price;
 
-    // Calculate total system cost
-    const totalSystemCost = inverter.price + battery.price + panels.price + cablePrice + totalBreakerPrice;
+    // Calculate total system cost (exclude cable price)
+    const totalSystemCost = inverter.price + battery.price + panels.price + totalBreakerPrice;
 
     return {
       systemSize: {
@@ -538,9 +535,8 @@ export function calculateSolarComponents(
       systemVoltage: systemVoltage,
       cables: {
         size: cableSize,
-        length: cableLength,
-        price: cablePrice,
-        name: cable.name
+        price: 0, // Set price to 0 or omit
+        name: cable ? cable.name : cableSize
       },
       breakers: {
         dc: {
@@ -564,14 +560,14 @@ export function calculateSolarComponents(
         price: panels.price,
         name: panels.name
       },
-      totalCost: totalSystemCost,
       costBreakdown: {
         inverter: inverter.price,
         battery: battery.price,
         panels: panels.price,
-        cables: cablePrice,
+        cables: 0, // Set cable cost to 0
         breakers: totalBreakerPrice
-      }
+      },
+      totalCost: totalSystemCost
     };
   } catch (error) {
     console.error('Error calculating solar components:', error);

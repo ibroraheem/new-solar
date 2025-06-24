@@ -29,12 +29,6 @@ const CostAnalysis: React.FC<CostAnalysisProps> = ({ components }) => {
       percentage: ((costBreakdown.panels / totalCost) * 100).toFixed(1)
     },
     {
-      name: 'Cables & Wiring',
-      price: costBreakdown.cables,
-      description: `${components.cables.name} (${components.cables.length}m)`,
-      percentage: ((costBreakdown.cables / totalCost) * 100).toFixed(1)
-    },
-    {
       name: 'Protection Devices',
       price: costBreakdown.breakers,
       description: `${components.breakers.dc.name} + ${components.breakers.ac.name}`,
@@ -90,6 +84,7 @@ const CostAnalysis: React.FC<CostAnalysisProps> = ({ components }) => {
       <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <h3 className="font-semibold text-yellow-800 mb-2">Additional Costs (Not Included)</h3>
         <ul className="text-sm text-yellow-700 space-y-1">
+          <li>• Cable prices and length are not included. Only the recommended cable size is shown.</li>
           <li>• Mounting hardware and installation labor are not included in the above prices.</li>
           <li>• Other costs may arise depending on site conditions and installation requirements.</li>
           <li>• Electrical permits and inspections</li>

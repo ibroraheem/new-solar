@@ -75,7 +75,6 @@ export interface SolarComponents {
   systemVoltage: number;
   cables: {
     size: string;
-    length: number;
     price: number;
     name: string;
   };

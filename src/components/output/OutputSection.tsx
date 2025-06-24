@@ -1,7 +1,6 @@
 import React from "react";
 import Charts from "./Charts";
 import ComponentTable from "./ComponentTable";
-import PdfReportSection from "./PdfReportSection";
 import { Appliance, PvgisData, SolarComponents } from "../../types";
 import {
   calculateCriticalLoad,
@@ -150,9 +149,6 @@ const OutputSection: React.FC<OutputSectionProps> = ({
             components={solarComponents}
             appliances={appliances}
           />
-
-          {/* PDF Report Section */}
-          <PdfReportSection />
         </div>
       </div>
     </section>

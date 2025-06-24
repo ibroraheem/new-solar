@@ -162,13 +162,13 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
                 <div className="text-xs text-gray-500">UV resistant, outdoor rated</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{components.cables.length}m</div>
+                <div className="text-sm text-gray-900">-</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{formatPrice(components.cables.price / components.cables.length)}/m</div>
+                <div className="text-sm text-gray-900">-</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-semibold text-gray-900">{formatPrice(components.costBreakdown.cables)}</div>
+                <div className="text-sm font-semibold text-gray-900">-</div>
               </td>
             </tr>
 
@@ -260,7 +260,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
           </div>
         </div>
         <div className="mt-4 text-sm text-yellow-700">
-          <strong>Note:</strong> Mounting hardware and installation labor are not included in the above prices. Other costs may arise depending on site conditions and installation requirements.
+          <strong>Note:</strong> Cable prices are not included in the calculation. Only the recommended cable size and length are shown. Mounting hardware and installation labor are not included in the above prices. Other costs may arise depending on site conditions and installation requirements.
         </div>
       </div>
     </div>

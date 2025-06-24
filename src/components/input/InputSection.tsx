@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { defaultAppliances } from '../../data/appliances';
 import { Appliance, LocationData } from '../../types';
 import { VALIDATION_CONSTANTS } from '../../utils/constants';
 import ApplianceSelector from './ApplianceSelector';
 import LocationInput from './LocationInput';
 import BackupDurationInput from './BackupDurationInput';
+import { appliances as initialAppliances } from '../../data/appliances';
 
 interface InputSectionProps {
   onCalculate: (params: {
@@ -17,7 +17,16 @@ interface InputSectionProps {
 
 const InputSection: React.FC<InputSectionProps> = ({ onCalculate }) => {
   const [applianceEnergy, setApplianceEnergy] = useState(0);
-  const [appliances, setAppliances] = useState<Appliance[]>(defaultAppliances);
+  const [appliances, setAppliances] = useState<Appliance[]>(
+    initialAppliances.map(a => ({
+      ...a,
+      category: a.category as 'home' | 'office' | 'custom',
+      timeSlots: a.timeSlots.map(slot => ({
+        ...slot,
+        name: slot.name as 'morning' | 'afternoon' | 'evening' | 'night'
+      }))
+    })) as Appliance[]
+  );
   const [location, setLocation] = useState<LocationData | null>(null);
   const [backupHours, setBackupHours] = useState(8);
   const [isReadyToCalculate, setIsReadyToCalculate] = useState(false);
