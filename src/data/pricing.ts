@@ -237,6 +237,13 @@ export const CABLE_PRICING = [
     capacity: '25mm²',
     price: 9000, // Final price per meter (includes 20% markup)
     unit: 'per meter'
+  },
+  {
+    id: 'cable-35mm',
+    name: '35mm² DC Cable',
+    capacity: '35mm²',
+    price: 14000, // Final price per meter (includes 20% markup)
+    unit: 'per meter'
   }
 ];
 

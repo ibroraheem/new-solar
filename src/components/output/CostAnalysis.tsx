@@ -90,7 +90,7 @@ const CostAnalysis: React.FC<CostAnalysisProps> = ({ components }) => {
       <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <h3 className="font-semibold text-yellow-800 mb-2">Additional Costs (Not Included)</h3>
         <ul className="text-sm text-yellow-700 space-y-1">
-          <li>• Mounting hardware, combiner box, and installation labor are not included in the above prices.</li>
+          <li>• Mounting hardware and installation labor are not included in the above prices.</li>
           <li>• Other costs may arise depending on site conditions and installation requirements.</li>
           <li>• Electrical permits and inspections</li>
           <li>• Transportation and delivery</li>

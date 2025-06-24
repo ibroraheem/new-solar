@@ -260,7 +260,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
           </div>
         </div>
         <div className="mt-4 text-sm text-yellow-700">
-          <strong>Note:</strong> Mounting hardware, combiner box, and installation labor are not included in the above prices. Other costs may arise depending on site conditions and installation requirements.
+          <strong>Note:</strong> Mounting hardware and installation labor are not included in the above prices. Other costs may arise depending on site conditions and installation requirements.
         </div>
       </div>
     </div>
