@@ -4,29 +4,27 @@ import { Sun } from 'lucide-react';
 const Header: React.FC = () => {
   return (
     <header className="bg-gradient-to-r from-green-700 via-green-500 to-yellow-400 text-white shadow-lg animate-fade-in">
-      <div className="container mx-auto px-4 py-6 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <span className="relative flex items-center justify-center h-12 w-12 bg-yellow-300 rounded-full shadow-lg animate-bounce-slow">
-            <Sun className="h-8 w-8 text-green-700" />
+      <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <span className="flex items-center justify-center h-16 w-16 bg-yellow-300 rounded-full shadow-lg animate-bounce-slow mb-2">
+            <Sun className="h-10 w-10 text-green-700" />
           </span>
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight drop-shadow-lg font-display">SolarMate</h1>
-            <p className="text-sm text-yellow-100">Professional Solar Solutions</p>
-          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg font-display text-green-900">SolarMate</h1>
+          <span className="block text-lg md:text-xl font-medium text-yellow-900 mt-1 drop-shadow-sm italic">Design your perfect solar system. Effortlessly.</span>
         </div>
-        <div className="hidden md:block text-center flex-1">
-          <span className="text-lg font-semibold italic text-yellow-100 drop-shadow">Smart Solar Sizing for Nigeria</span>
-        </div>
-        <nav>
-          <ul className="flex space-x-6">
+        <nav className="mt-6">
+          <ul className="flex space-x-8 text-lg font-semibold">
             <li>
-              <a href="#calculator" className="hover:text-yellow-200 transition-colors font-semibold">Calculator</a>
+              <a href="#calculator" className="hover:text-yellow-200 transition-colors">Calculator</a>
             </li>
             <li>
-              <a href="#how-it-works" className="hover:text-yellow-200 transition-colors font-semibold">How It Works</a>
+              <a href="#how-it-works" className="hover:text-yellow-200 transition-colors">How It Works</a>
             </li>
             <li>
-              <a href="#about" className="hover:text-yellow-200 transition-colors font-semibold">About</a>
+              <a href="#about" className="hover:text-yellow-200 transition-colors">About</a>
+            </li>
+            <li>
+              <a href="/faq" className="hover:text-yellow-200 transition-colors">FAQ</a>
             </li>
           </ul>
         </nav>
