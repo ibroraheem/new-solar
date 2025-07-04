@@ -223,28 +223,34 @@ function selectBattery(
   totalBatteries: number;
   name: string;
 } {
-  // Calculate hourly demand and add buffer for efficiency losses
-  const hourlyDemand = dailyEnergyDemand / 24; // Convert daily to hourly
-  const energyNeeded = (hourlyDemand * backupHours * SYSTEM_CONSTANTS.PEAK_POWER_MARGIN) / EFFICIENCY_FACTOR;
+  // Calculate energy needed for backup period (not hourly average)
+  // Use the actual daily energy demand for the backup period
+  const energyNeeded = (dailyEnergyDemand * backupHours / 24) / EFFICIENCY_FACTOR;
 
   // Prefer lithium batteries first
   const lithiumBatteries = BATTERY_PRICING.filter(bat => bat.name.toLowerCase().includes('lithium'));
   const tubularBatteries = BATTERY_PRICING.filter(bat => bat.name.toLowerCase().includes('tubular'));
 
   function findBestConfig(batteries: typeof BATTERY_PRICING) {
+    let bestConfig = null;
+    let bestEfficiency = 0;
+
     // Try to find best config for given battery type
     const exactVoltageBatteries = batteries.filter(bat => {
       const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
       return batVoltage === systemVoltage;
     });
-    let bestConfig = null;
-    if (exactVoltageBatteries.length > 0) {
-      for (const battery of exactVoltageBatteries) {
-        const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
-        const parallel = Math.ceil(energyNeeded / batteryKwh);
-        const totalBatteries = parallel;
-        const totalCapacity = batteryKwh * parallel;
-        if (totalCapacity >= energyNeeded && totalBatteries <= 8) {
+
+    // Check exact voltage matches first
+    for (const battery of exactVoltageBatteries) {
+      const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
+      const parallel = Math.ceil(energyNeeded / batteryKwh);
+      const totalBatteries = parallel;
+      const totalCapacity = batteryKwh * parallel;
+      
+      if (totalCapacity >= energyNeeded && totalBatteries <= 8) {
+        const efficiency = totalCapacity / energyNeeded; // Lower is better (closer to needed)
+        if (!bestConfig || efficiency < bestEfficiency) {
           bestConfig = {
             battery,
             series: 1,
@@ -252,16 +258,18 @@ function selectBattery(
             totalBatteries,
             totalCapacity
           };
-          break;
+          bestEfficiency = efficiency;
         }
       }
     }
+
+    // If no exact voltage match, try series configuration
     if (!bestConfig) {
-      // Try series config
       const availableBatteries = batteries.filter(bat => {
         const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
-        return systemVoltage % batVoltage === 0;
+        return batVoltage > 0 && systemVoltage % batVoltage === 0;
       });
+
       for (const battery of availableBatteries) {
         const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
         const batteryVoltage = parseInt(battery.voltage?.replace('V', '') || '0');
@@ -269,31 +277,40 @@ function selectBattery(
         const parallel = Math.ceil(energyNeeded / (batteryKwh * series));
         const totalBatteries = series * parallel;
         const totalCapacity = batteryKwh * series * parallel;
+        
         if (totalCapacity >= energyNeeded && totalBatteries <= 8) {
-          bestConfig = {
-            battery,
-            series,
-            parallel,
-            totalBatteries,
-            totalCapacity
-          };
-          break;
+          const efficiency = totalCapacity / energyNeeded;
+          if (!bestConfig || efficiency < bestEfficiency) {
+            bestConfig = {
+              battery,
+              series,
+              parallel,
+              totalBatteries,
+              totalCapacity
+            };
+            bestEfficiency = efficiency;
+          }
         }
       }
     }
+
     return bestConfig;
   }
 
   let bestConfig = findBestConfig(lithiumBatteries);
   let type = 'Lithium';
+  
   if (!bestConfig) {
     bestConfig = findBestConfig(tubularBatteries);
     type = 'Tubular';
   }
+  
   if (!bestConfig) {
-    throw new Error('Cannot meet battery requirement with available batteries.');
+    throw new Error(`Cannot meet battery requirement (${energyNeeded.toFixed(1)}kWh) with available batteries for ${systemVoltage}V system.`);
   }
+
   const totalSystemCapacityAh = (bestConfig.totalCapacity * 1000) / systemVoltage;
+  
   return {
     type,
     capacityAh: Math.round(totalSystemCapacityAh),

@@ -8,11 +8,10 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-3">
           <span className="relative flex items-center justify-center h-12 w-12 bg-yellow-300 rounded-full shadow-lg animate-bounce-slow">
             <Sun className="h-8 w-8 text-green-700" />
-            <span className="absolute bottom-0 right-0 bg-green-700 text-xs text-white px-2 py-0.5 rounded-full border-2 border-yellow-300 shadow">NG</span>
           </span>
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight drop-shadow-lg font-display">SolarMate</h1>
-            <span className="block text-xs font-semibold bg-green-800 bg-opacity-80 px-2 py-0.5 rounded-full mt-1 text-yellow-200 shadow">Made in Nigeria</span>
+            <p className="text-sm text-yellow-100">Professional Solar Solutions</p>
           </div>
         </div>
         <div className="hidden md:block text-center flex-1">

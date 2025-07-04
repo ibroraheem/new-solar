@@ -1,6 +1,5 @@
 import React from 'react';
 import { SolarComponents, Appliance } from '../../types';
-import { formatPrice } from '../../data/pricing';
 import { calculateEnergyDemand } from '../../utils/calculations';
 
 interface ComponentTableProps {
@@ -87,7 +86,7 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
           <div>
             <span className="font-medium text-gray-700">Warranty:</span>
-            <span className="text-gray-600 ml-2">2-5 years on components</span>
+            <span className="text-gray-600 ml-2">1-5 years on major components</span>
           </div>
           <div>
             <span className="font-medium text-gray-700">Installation:</span>
@@ -98,13 +97,51 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
             <span className="text-gray-600 ml-2">24/7 technical support</span>
           </div>
         </div>
-        <div className="mt-4 text-sm text-yellow-700">
-          <strong>Note:</strong> Cable prices are not included in the calculation. Only the recommended cable size and length are shown. Mounting hardware and installation labor are not included. Other costs may arise depending on site conditions and installation requirements.
-        </div>
-        <div className="mt-6 flex justify-center">
-          <a href="https://wa.me/2349066730744" className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition-colors font-semibold text-lg">
-            ⚡ Contact Us via WhatsApp
-          </a>
+        
+        {/* Professional Audit Lead Magnet */}
+        <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg">
+          <div className="text-center mb-4">
+            <h3 className="text-xl font-bold text-blue-900 mb-2">🚀 Ready for Professional Installation?</h3>
+            <p className="text-blue-800 mb-4">
+              This is your preliminary system design. For accurate pricing, site assessment, and professional installation, 
+              we recommend a comprehensive audit by our certified solar engineers.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg border border-blue-100">
+              <h4 className="font-semibold text-blue-900 mb-2">📋 Professional Audit Includes:</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Site survey & roof assessment</li>
+                <li>• Electrical load analysis</li>
+                <li>• Shading analysis</li>
+                <li>• Detailed cost breakdown</li>
+                <li>• Installation timeline</li>
+                <li>• Warranty & maintenance plan</li>
+              </ul>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-green-100">
+              <h4 className="font-semibold text-green-900 mb-2">💡 Why Choose Professional Audit?</h4>
+              <ul className="text-sm text-green-800 space-y-1">
+                <li>• Accurate system sizing</li>
+                <li>• Optimized component selection</li>
+                <li>• Compliance with local codes</li>
+                <li>• Maximum energy efficiency</li>
+                <li>• Long-term reliability</li>
+                <li>• Peace of mind guarantee</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="text-center">
+            <a 
+              href="https://wa.me/2349066730744?text=Hi! I just used the SolarMate calculator and would like a professional solar audit for my home/business. Can you help me with the next steps?" 
+              className="inline-flex items-center px-8 py-4 bg-green-600 text-white rounded-lg shadow-lg hover:bg-green-700 transition-colors font-semibold text-lg"
+            >
+              ⚡ Get Professional Solar Audit
+            </a>
+            <p className="text-sm text-gray-600 mt-2">Free consultation • No obligation • Expert guidance</p>
+          </div>
         </div>
       </div>
     </div>

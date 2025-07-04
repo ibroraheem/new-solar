@@ -1,15 +1,15 @@
 # SolarMate - Smart Solar Sizing for Nigeria
 
-A comprehensive solar system design calculator specifically tailored for the Nigerian market, providing accurate component sizing, pricing, and system optimization.
+A comprehensive solar system design calculator specifically tailored for the Nigerian market, providing accurate component sizing and system optimization for professional installation.
 
 ## 🚀 Features
 
-- **Smart Component Sizing**: Automatic calculation of solar panels, inverters, batteries, and cables
-- **Nigerian Market Focus**: Location-specific solar data and pricing
+- **Smart Component Sizing**: Automatic calculation of solar panels, inverters, batteries, and protection devices
+- **Nigerian Market Focus**: Location-specific solar data and regional optimization
 - **Interactive Maps**: Visual location selection with Nigerian cities
-- **Real-time Pricing**: Up-to-date component pricing with 20% markup
-- **PDF Reports**: Generate detailed system reports
-- **Premium Features**: Advanced inverter selection, component comparison, and cost analysis
+- **Professional Lead Generation**: Comprehensive audit services and installation support
+- **Technical Specifications**: Detailed BOM and system performance analysis
+- **Advanced Analytics**: Solar generation charts and battery performance metrics
 
 ## 🛠️ Tech Stack
 
@@ -41,13 +41,6 @@ npm run dev
 Create a `.env` file in the root directory:
 
 ```env
-# Payment Configuration
-PAYSTACK_SECRET_KEY=your_paystack_secret_key
-PAYSTACK_PUBLIC_KEY=your_paystack_public_key
-
-# JWT Configuration
-JWT_SECRET=your_jwt_secret_key
-
 # Application Configuration
 URL=https://your-domain.netlify.app
 ALLOWED_ORIGIN=https://your-domain.netlify.app
@@ -67,68 +60,32 @@ ENABLE_COMPONENT_COMPARISON=true
 ### Netlify Deployment
 
 1. **Connect Repository**: Link your GitHub repository to Netlify
-2. **Build Settings**:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-   - Functions directory: `netlify/functions`
-3. **Environment Variables**: Add all required environment variables in Netlify dashboard
-4. **Deploy**: Netlify will automatically build and deploy your app
-
-### Manual Deployment
-
-```bash
-# Build for production
-npm run build
-
-# Preview build
-npm run preview
-```
-
-## 📁 Project Structure
-
-```
-src/
-├── components/          # React components
-│   ├── input/          # Input forms and selectors
-│   ├── output/         # Results and charts
-│   ├── layout/         # Header, footer, navigation
-│   └── ui/             # Reusable UI components
-├── data/               # Static data and pricing
-├── hooks/              # Custom React hooks
-├── context/            # React context providers
-├── pages/              # Page components
-├── types/              # TypeScript type definitions
-├── utils/              # Utility functions
-└── main.tsx           # Application entry point
-
-netlify/
-└── functions/         # Netlify serverless functions
-```
+2. **Build Settings**: Set build command to `npm run build`
+3. **Publish Directory**: Set to `dist`
+4. **Environment Variables**: Add your environment variables in Netlify dashboard
 
 ## 🎯 Key Features
 
-### Component Pricing
-- **Inverters**: 2KVA to 10.2KVA with Growatt branding
-- **Batteries**: 5KWH to 15.5KWH lithium batteries
-- **Solar Panels**: 400W, 550W, and 600W options
-- **Cables & Protection**: Complete wiring and protection devices
+### Solar System Design
+- **Location-Based Calculations**: Uses PVGIS data for accurate solar potential
+- **Appliance Load Profiling**: Detailed energy consumption analysis
+- **Battery Optimization**: Smart battery selection with lithium preference
+- **Component Matching**: Optimized inverter and panel selection
+- **Protection Systems**: Proper breaker and surge protection sizing
 
-### Solar Data Integration
-- **PVGIS API**: Real-time solar irradiance data
-- **Location-based**: Nigerian cities with coordinates
-- **Fallback Data**: Regional averages when API unavailable
+### Professional Services
+- **Site Survey**: Comprehensive location assessment
+- **Electrical Analysis**: Load verification and compliance checks
+- **Installation Planning**: Timeline and logistics coordination
+- **Warranty Support**: 1-5 years on major components
+- **Ongoing Maintenance**: Technical support and monitoring
 
-### Payment Integration
-- **Paystack**: Nigerian payment gateway
-- **Premium Features**: ₦10,000 subscription
-- **JWT Tokens**: Secure access management
-
-## 🔒 Security
-
-- **CORS Protection**: Environment-based origin validation
-- **JWT Authentication**: Secure token-based access
-- **Input Validation**: Comprehensive form validation
-- **Error Handling**: Graceful error management
+### Technical Specifications
+- **System Sizing**: 0.1-100 kWh daily energy range
+- **Backup Duration**: 8-24 hours configurable
+- **Component Limits**: Up to 12.6kWp system capacity
+- **Efficiency Optimization**: 85% battery efficiency factor
+- **Safety Margins**: 10% solar generation buffer
 
 ## 📊 Performance
 
@@ -162,8 +119,10 @@ For support and questions:
 2. **Add Appliances**: Select from presets or add custom appliances
 3. **Set Backup Hours**: Choose how long you need backup power
 4. **Get Results**: View your optimized solar system design
-5. **Download Report**: Generate PDF report with full specifications
+5. **Professional Audit**: Contact us for comprehensive site assessment
 
 ---
 
-**Built with ❤️ for the Nigerian solar market** 
+**Built with ❤️ for the Nigerian solar market**
+
+**Developed by [@ibroraheem](https://x.com/ibroraheem)** 

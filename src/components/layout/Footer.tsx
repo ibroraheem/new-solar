@@ -13,13 +13,12 @@ const Footer: React.FC = () => {
               <Sun className="h-7 w-7 text-yellow-300 animate-spin-slow" />
               <h2 className="text-2xl font-extrabold font-display">SolarMate</h2>
             </div>
-            <span className="inline-block text-xs font-semibold bg-green-800 bg-opacity-80 px-2 py-0.5 rounded-full mb-2 text-yellow-200 shadow">Made in Nigeria</span>
             <p className="text-gray-200 mb-4">
               Smart solar sizing for Nigerian homes and businesses.<br />
               Get accurate solar system recommendations tailored to your needs.
             </p>
             <div className="flex space-x-4 mt-2">
-              <a href="#" className="text-yellow-300 hover:text-white transition-colors">
+              <a href="https://x.com/ibroraheem" target="_blank" rel="noopener noreferrer" className="text-yellow-300 hover:text-white transition-colors">
                 <Twitter size={22} />
               </a>
               <a href="#" className="text-yellow-300 hover:text-white transition-colors">
@@ -56,6 +55,18 @@ const Footer: React.FC = () => {
         
         <div className="border-t border-yellow-300 mt-8 pt-6 text-center text-yellow-100">
           <p>&copy; {currentYear} SolarMate. All rights reserved.</p>
+          <p className="mt-2 text-sm">
+            Developed by{' '}
+            <a 
+              href="https://x.com/ibroraheem" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-yellow-200 hover:text-white underline"
+            >
+              @ibroraheem
+            </a>
+            {' '}• WhatsApp: +2349066730744
+          </p>
         </div>
       </div>
     </footer>

@@ -72,13 +72,7 @@ const SystemOverview: React.FC = () => {
             <div className="text-center flex-1">
               <h1 className="text-5xl font-extrabold text-green-700 mb-2 drop-shadow-lg font-display animate-fade-in">SolarMate</h1>
               <p className="text-xl text-yellow-700 font-semibold mb-2 animate-fade-in">Smart Solar Sizing for Nigeria</p>
-              <span className="inline-block text-xs font-semibold bg-green-800 bg-opacity-80 px-2 py-0.5 rounded-full text-yellow-200 shadow animate-fade-in">Made in Nigeria</span>
             </div>
-          </div>
-          <div className="mt-4 mb-8 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded shadow animate-fade-in">
-            <span className="text-yellow-800 font-semibold">
-              All prices shown are based on the Nigerian market (₦) and are subject to change due to market fluctuations. For the most accurate and up-to-date pricing, please contact our team.
-            </span>
           </div>
         </div>
       </div>
