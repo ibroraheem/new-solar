@@ -233,7 +233,8 @@ function selectBattery(
 
   function findBestConfig(batteries: typeof BATTERY_PRICING) {
     let bestConfig = null;
-    let bestEfficiency = 0;
+    let bestBatteryCount = Infinity;
+    let bestEfficiency = Infinity;
 
     // Try to find best config for given battery type
     const exactVoltageBatteries = batteries.filter(bat => {
@@ -241,24 +242,46 @@ function selectBattery(
       return batVoltage === systemVoltage;
     });
 
-    // Check exact voltage matches first
+    // Check exact voltage matches first - prioritize single battery
     for (const battery of exactVoltageBatteries) {
       const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
-      const parallel = Math.ceil(energyNeeded / batteryKwh);
-      const totalBatteries = parallel;
-      const totalCapacity = batteryKwh * parallel;
       
-      if (totalCapacity >= energyNeeded && totalBatteries <= 8) {
-        const efficiency = totalCapacity / energyNeeded; // Lower is better (closer to needed)
-        if (!bestConfig || efficiency < bestEfficiency) {
+      // Try single battery first
+      if (batteryKwh >= energyNeeded) {
+        const efficiency = batteryKwh / energyNeeded;
+        if (!bestConfig || batteryKwh < bestConfig.totalCapacity) {
           bestConfig = {
             battery,
             series: 1,
-            parallel,
-            totalBatteries,
-            totalCapacity
+            parallel: 1,
+            totalBatteries: 1,
+            totalCapacity: batteryKwh
           };
+          bestBatteryCount = 1;
           bestEfficiency = efficiency;
+        }
+      }
+      
+      // If single battery doesn't work, try parallel (but only if we haven't found a single battery solution)
+      if (!bestConfig || bestBatteryCount > 1) {
+        const parallel = Math.ceil(energyNeeded / batteryKwh);
+        const totalBatteries = parallel;
+        const totalCapacity = batteryKwh * parallel;
+        
+        if (totalCapacity >= energyNeeded && totalBatteries <= 8) {
+          const efficiency = totalCapacity / energyNeeded;
+          if (!bestConfig || totalBatteries < bestBatteryCount || 
+              (totalBatteries === bestBatteryCount && efficiency < bestEfficiency)) {
+            bestConfig = {
+              battery,
+              series: 1,
+              parallel,
+              totalBatteries,
+              totalCapacity
+            };
+            bestBatteryCount = totalBatteries;
+            bestEfficiency = efficiency;
+          }
         }
       }
     }
@@ -274,21 +297,44 @@ function selectBattery(
         const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
         const batteryVoltage = parseInt(battery.voltage?.replace('V', '') || '0');
         const series = systemVoltage / batteryVoltage;
-        const parallel = Math.ceil(energyNeeded / (batteryKwh * series));
-        const totalBatteries = series * parallel;
-        const totalCapacity = batteryKwh * series * parallel;
         
-        if (totalCapacity >= energyNeeded && totalBatteries <= 8) {
-          const efficiency = totalCapacity / energyNeeded;
-          if (!bestConfig || efficiency < bestEfficiency) {
+        // Try single series string first
+        if (batteryKwh * series >= energyNeeded) {
+          const efficiency = (batteryKwh * series) / energyNeeded;
+          if (!bestConfig || series < bestBatteryCount || 
+              (series === bestBatteryCount && efficiency < bestEfficiency)) {
             bestConfig = {
               battery,
               series,
-              parallel,
-              totalBatteries,
-              totalCapacity
+              parallel: 1,
+              totalBatteries: series,
+              totalCapacity: batteryKwh * series
             };
+            bestBatteryCount = series;
             bestEfficiency = efficiency;
+          }
+        }
+        
+        // If single series doesn't work, try series-parallel
+        if (!bestConfig || bestBatteryCount > series) {
+          const parallel = Math.ceil(energyNeeded / (batteryKwh * series));
+          const totalBatteries = series * parallel;
+          const totalCapacity = batteryKwh * series * parallel;
+          
+          if (totalCapacity >= energyNeeded && totalBatteries <= 8) {
+            const efficiency = totalCapacity / energyNeeded;
+            if (!bestConfig || totalBatteries < bestBatteryCount || 
+                (totalBatteries === bestBatteryCount && efficiency < bestEfficiency)) {
+              bestConfig = {
+                battery,
+                series,
+                parallel,
+                totalBatteries,
+                totalCapacity
+              };
+              bestBatteryCount = totalBatteries;
+              bestEfficiency = efficiency;
+            }
           }
         }
       }
@@ -374,8 +420,22 @@ export function calculateSolarComponents(
       throw new Error(`Calculated daily energy demand (${dailyEnergyDemand.toFixed(1)}kWh) is outside the supported range of ${MIN_DAILY_ENERGY}-${MAX_DAILY_ENERGY} kWh. Please adjust your appliance selection.`);
     }
 
+    // Select components using pricing database
+    const maxLoad = calculateMaxLoad(appliances);
+    const inverter = selectInverter(dailyEnergyDemand, maxLoad, 0); // We'll recalculate PV after battery selection
+    const systemVoltage = inverter.voltage;
+    const battery = selectBattery(dailyEnergyDemand, systemVoltage, backupHours);
+
+    // Calculate battery charging requirements
+    const batteryCapacityKwh = (battery.capacityAh * systemVoltage) / 1000;
+    const usableBatteryCapacity = batteryCapacityKwh * (battery.type === 'Lithium' ? 0.9 : 0.5); // 90% for lithium, 50% for tubular
+    const batteryChargingRequirement = usableBatteryCapacity * 0.9; // Charge to 90% of usable capacity
+
+    // Total daily energy requirement: load + battery charging
+    const totalDailyEnergyRequirement = dailyEnergyDemand + batteryChargingRequirement;
+
     // Add 10% margin to requiredKwp so solar generation always exceeds demand
-    const requiredKwp = (dailyEnergyDemand / (worstMonthPvout * SYSTEM_CONSTANTS.SOLAR_EFFICIENCY)) * 1.1;
+    const requiredKwp = (totalDailyEnergyRequirement / (worstMonthPvout * SYSTEM_CONSTANTS.SOLAR_EFFICIENCY)) * 1.1;
     const requiredPanelWatts = requiredKwp * 1000;
 
     // Check system size limit and throw error if exceeded
@@ -387,10 +447,6 @@ export function calculateSolarComponents(
     }
 
     // Select components using pricing database
-    const maxLoad = calculateMaxLoad(appliances);
-    const inverter = selectInverter(dailyEnergyDemand, maxLoad, requiredPanelWatts);
-    const systemVoltage = inverter.voltage;
-    const battery = selectBattery(dailyEnergyDemand, systemVoltage, backupHours);
     const panels = selectPanels(requiredKwp, inverter.watts);
 
     // Calculate breaker requirements using pricing database
