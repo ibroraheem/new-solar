@@ -1,6 +1,7 @@
 import React from "react";
 import Charts from "./Charts";
 import ComponentTable from "./ComponentTable";
+import EnvironmentalImpact from "./EnvironmentalImpact";
 import { Appliance, PvgisData, SolarComponents } from "../../types";
 import {
   calculateCriticalLoad,
@@ -148,6 +149,14 @@ const OutputSection: React.FC<OutputSectionProps> = ({
           <ComponentTable
             components={solarComponents}
             appliances={appliances}
+          />
+
+          {/* Environmental Impact */}
+          <EnvironmentalImpact
+            pvgisData={pvgisData}
+            appliances={appliances}
+            solarComponents={solarComponents}
+            isFallbackData={isFallbackData}
           />
         </div>
       </div>

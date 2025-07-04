@@ -2,7 +2,7 @@
 export const VALIDATION_CONSTANTS = {
   MIN_DAILY_ENERGY: 0.1, // kWh
   MAX_DAILY_ENERGY: 100, // kWh
-  MIN_BACKUP_HOURS: 8,
+  MIN_BACKUP_HOURS: 4, // Reduced from 8 to include basic residential options
   MAX_BACKUP_HOURS: 24,
   MAX_SYSTEM_SIZE_KWP: 12.6,
   EFFICIENCY_FACTOR: 0.85, // 85% efficiency for battery calculations

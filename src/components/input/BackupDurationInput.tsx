@@ -43,16 +43,19 @@ const BackupDurationInput: React.FC<BackupDurationInputProps> = ({ backupHours, 
         
         <input
           type="range"
-          min="8"
+          min="4"
           max="24"
-          step="4"
+          step="2"
           value={validBackupHours}
           onChange={handleChange}
           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-500"
         />
         
         <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>4h</span>
+          <span>6h</span>
           <span>8h</span>
+          <span>10h</span>
           <span>12h</span>
           <span>16h</span>
           <span>20h</span>
@@ -72,6 +75,8 @@ const BackupDurationInput: React.FC<BackupDurationInputProps> = ({ backupHours, 
 };
 
 function getBackupDescription(hours: number): string {
+  if (hours <= 4) return "Basic backup";
+  if (hours <= 6) return "Standard backup";
   if (hours <= 8) return "Night-time backup";
   if (hours <= 12) return "Extended backup";
   if (hours <= 16) return "Full day backup";
@@ -79,7 +84,11 @@ function getBackupDescription(hours: number): string {
 }
 
 function getBackupRecommendation(hours: number): string {
-  if (hours <= 8) {
+  if (hours <= 4) {
+    return "Basic backup for short outages. Suitable for areas with reliable grid power and minimal backup needs.";
+  } else if (hours <= 6) {
+    return "Standard backup for typical outages. Good for residential use with moderate backup requirements.";
+  } else if (hours <= 8) {
     return "Optimized for night-time use (6pm-6am). Perfect for homes with reliable daytime solar generation.";
   } else if (hours <= 12) {
     return "Balanced option providing extended evening and early morning coverage. Most cost-effective for typical Nigerian homes.";

@@ -28,7 +28,7 @@ const InputSection: React.FC<InputSectionProps> = ({ onCalculate }) => {
     })) as Appliance[]
   );
   const [location, setLocation] = useState<LocationData | null>(null);
-  const [backupHours, setBackupHours] = useState(8);
+  const [backupHours, setBackupHours] = useState(6);
   const [isReadyToCalculate, setIsReadyToCalculate] = useState(false);
 
   // Ensure backup hours stays within valid range using centralized constants
