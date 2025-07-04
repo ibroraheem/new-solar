@@ -14,7 +14,7 @@ const FAQPage: React.FC = () => (
       </div>
       <div>
         <h2 className="text-lg font-semibold text-gray-900">What's included in a professional solar audit?</h2>
-        <p className="text-gray-700">Our comprehensive audit includes site survey, roof assessment, electrical load analysis, shading analysis, detailed cost breakdown, installation timeline, and warranty & maintenance planning.</p>
+        <p className="text-gray-700">Our comprehensive audit (₦25,000) includes site survey, roof assessment, electrical load analysis, shading analysis, detailed cost breakdown, installation timeline, and warranty & maintenance planning.</p>
       </div>
       <div>
         <h2 className="text-lg font-semibold text-gray-900">Can I use this app for both homes and offices?</h2>
@@ -22,7 +22,7 @@ const FAQPage: React.FC = () => (
       </div>
       <div>
         <h2 className="text-lg font-semibold text-gray-900">How do I get help or request a custom quote?</h2>
-        <p className="text-gray-700">Contact us via WhatsApp (+2349066730744) or email (ibroraheem95@gmail.com) for professional consultation, custom system design, and installation services.</p>
+        <p className="text-gray-700">Contact us via WhatsApp (+2349066730744) or email (ibroraheem95@gmail.com) for professional consultation, custom system design, and installation services. Professional audits are ₦25,000.</p>
       </div>
       <div>
         <h2 className="text-lg font-semibold text-gray-900">What warranty do you provide?</h2>

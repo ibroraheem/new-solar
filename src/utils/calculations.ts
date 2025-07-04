@@ -434,8 +434,8 @@ export function calculateSolarComponents(
     // Total daily energy requirement: load + battery charging
     const totalDailyEnergyRequirement = dailyEnergyDemand + batteryChargingRequirement;
 
-    // Add 10% margin to requiredKwp so solar generation always exceeds demand
-    const requiredKwp = (totalDailyEnergyRequirement / (worstMonthPvout * SYSTEM_CONSTANTS.SOLAR_EFFICIENCY)) * 1.1;
+    // Calculate required PV size - ensure generation slightly exceeds demand (5% margin instead of 10%)
+    const requiredKwp = (totalDailyEnergyRequirement / (worstMonthPvout * SYSTEM_CONSTANTS.SOLAR_EFFICIENCY)) * 1.05;
     const requiredPanelWatts = requiredKwp * 1000;
 
     // Check system size limit and throw error if exceeded
@@ -446,8 +446,13 @@ export function calculateSolarComponents(
       );
     }
 
+    // Ensure PV doesn't exceed 120% of inverter power rating
+    const maxAllowedPvWatts = inverter.watts * 1.2;
+    const finalPanelWatts = Math.min(requiredPanelWatts, maxAllowedPvWatts);
+    const finalRequiredKwp = finalPanelWatts / 1000;
+
     // Select components using pricing database
-    const panels = selectPanels(requiredKwp, inverter.watts);
+    const panels = selectPanels(finalRequiredKwp, inverter.watts);
 
     // Calculate breaker requirements using pricing database
     const panelVoltage = 24; // Typical panel voltage (Vmp) - should be configurable

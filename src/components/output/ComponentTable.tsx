@@ -134,13 +134,17 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
           </div>
           
           <div className="text-center">
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800 font-semibold">Professional Audit Fee: ₦25,000</p>
+              <p className="text-yellow-700 text-sm">Comprehensive site assessment and detailed system design</p>
+            </div>
             <a 
-              href="https://wa.me/2349066730744?text=Hi! I just used the SolarMate calculator and would like a professional solar audit for my home/business. Can you help me with the next steps?" 
+              href="https://wa.me/2349066730744?text=Hi! I just used the SolarMate calculator and would like to book a professional solar audit for ₦25,000. Can you help me with the next steps?" 
               className="inline-flex items-center px-8 py-4 bg-green-600 text-white rounded-lg shadow-lg hover:bg-green-700 transition-colors font-semibold text-lg"
             >
-              ⚡ Get Professional Solar Audit
+              ⚡ Book Professional Solar Audit
             </a>
-            <p className="text-sm text-gray-600 mt-2">Free consultation • No obligation • Expert guidance</p>
+            <p className="text-sm text-gray-600 mt-2">Professional consultation • Detailed site assessment • Installation support</p>
           </div>
         </div>
       </div>
