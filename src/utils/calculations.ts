@@ -326,24 +326,11 @@ function selectBattery(
     const batteryKwh = parseFloat(bat.capacity.replace('KWH', ''));
     const stringKwh = batteryKwh * series;
     const batteryCapacityAh = (batteryKwh * 1000) / batVoltage;
-    // If a single string meets/exceeds requiredKwh, use one string
-    if (stringKwh >= requiredKwh) {
-      if (series < minTotalBatteries) {
-        bestConfig = {
-          type,
-          capacityAh: Math.round(batteryCapacityAh * series),
-          series,
-          parallel: 1,
-          totalBatteries: series,
-          name: bat.name
-        };
-        minTotalBatteries = series;
-      }
-      // If requiredKwh is less than the smallest possible string, use one string
-      continue;
+    // Always require at least one full series string
+    let parallel = 1;
+    if (stringKwh < requiredKwh) {
+      parallel = Math.ceil(requiredKwh / stringKwh);
     }
-    // Otherwise, use minimum number of parallel strings
-    const parallel = Math.ceil(requiredKwh / stringKwh);
     const totalBatteries = series * parallel;
     if (totalBatteries < minTotalBatteries) {
       bestConfig = {
