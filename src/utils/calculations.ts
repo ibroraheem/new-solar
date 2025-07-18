@@ -267,85 +267,34 @@ function selectBattery(
     bat => parseInt(bat.voltage?.replace('V', '') || '0') === systemVoltage
   );
 
-  if (voltageMatched.length > 0) {
-    // Sort by capacity (ascending) to find the most efficient fit
-    const sorted = voltageMatched.slice().sort(
-      (a, b) =>
-        parseFloat(a.capacity.replace('KWH', '')) -
-        parseFloat(b.capacity.replace('KWH', ''))
-    );
-
-    // Try to find a single battery that meets or exceeds requirement
-    const single = sorted.find(
-      bat => parseFloat(bat.capacity.replace('KWH', '')) >= requiredKwh
-    );
-
-    if (single) {
-      const batteryKwh = parseFloat(single.capacity.replace('KWH', ''));
-      const batteryCapacityAh = (batteryKwh * 1000) / systemVoltage;
-      return {
-        type,
-        capacityAh: Math.round(batteryCapacityAh),
-        series: 1,
-        parallel: 1,
-        totalBatteries: 1,
-        name: single.name
-      };
-    }
-
-    // If no single battery suffices, use multiple in parallel
-    const battery = sorted[sorted.length - 1]; // largest available
-    const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
-    const batteryCapacityAh = (batteryKwh * 1000) / systemVoltage;
-    const parallel = Math.ceil(requiredKwh / batteryKwh);
-
-    return {
-      type,
-      capacityAh: Math.round(batteryCapacityAh * parallel),
-      series: 1,
-      parallel,
-      totalBatteries: parallel,
-      name: battery.name
-    };
+  if (voltageMatched.length === 0) {
+    throw new Error(`No batteries available with exact voltage match: ${systemVoltage}V.`);
   }
 
-  // Fallback: try to build voltage using series of lower-voltage batteries
-  const possibleSeries = availableBatteries.filter(bat => {
-    const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
-    return batVoltage > 0 && systemVoltage % batVoltage === 0;
-  });
+  // Sort by capacity (ascending)
+  const sorted = voltageMatched.slice().sort(
+    (a, b) => parseFloat(a.capacity.replace('KWH', '')) - parseFloat(b.capacity.replace('KWH', ''))
+  );
 
-  if (possibleSeries.length > 0) {
-    let bestConfig = null;
-    let minTotalBatteries = Infinity;
-    for (const bat of possibleSeries) {
-      const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
-      const series = systemVoltage / batVoltage;
-      if (series < 2 && systemVoltage > 12) continue; // Defensive: never allow 1 in series for >12V
-      const batteryKwh = parseFloat(bat.capacity.replace('KWH', ''));
-      const stringKwh = batteryKwh * series;
-      const batteryCapacityAh = (batteryKwh * 1000) / batVoltage;
-      let parallel = 1;
-      if (stringKwh < requiredKwh) {
-        parallel = Math.ceil(requiredKwh / stringKwh);
-      }
-      const totalBatteries = series * parallel;
-      if (totalBatteries < minTotalBatteries) {
-        bestConfig = {
-          type,
-          capacityAh: Math.round(batteryCapacityAh * series * parallel),
-          series,
-          parallel,
-          totalBatteries,
-          name: bat.name
-        };
-        minTotalBatteries = totalBatteries;
-      }
-    }
-    if (bestConfig) return bestConfig;
+  // Find the smallest battery >= requiredKwh
+  let selected = sorted.find(bat => parseFloat(bat.capacity.replace('KWH', '')) >= requiredKwh);
+  if (!selected) {
+    // If none are large enough, use the largest available in parallel
+    selected = sorted[sorted.length - 1];
   }
 
-  throw new Error(`No suitable batteries or configuration for ${systemVoltage}V system.`);
+  const batteryKwh = parseFloat(selected.capacity.replace('KWH', ''));
+  const batteryCapacityAh = (batteryKwh * 1000) / systemVoltage;
+  const parallel = Math.ceil(requiredKwh / batteryKwh);
+
+  return {
+    type,
+    capacityAh: Math.round(batteryCapacityAh * parallel),
+    series: 1,
+    parallel,
+    totalBatteries: parallel,
+    name: selected.name
+  };
 }
 
 
