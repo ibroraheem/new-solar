@@ -56,6 +56,10 @@ const ComponentTable: React.FC<ComponentTableProps> = ({ components, appliances 
           <div className="text-gray-700 text-sm mb-1">{components.batteryConfiguration.name}</div>
           <div className="text-xs text-gray-500">{getBatteryConfig()} ({components.batteryConfiguration.type})</div>
           <div className="text-xs text-gray-500">{components.batteryConfiguration.totalBatteries} units</div>
+          <div className="text-xs text-yellow-700 mt-1 font-semibold">Battery Bank Voltage: {components.systemVoltage}V</div>
+          {components.batteryConfiguration.totalBatteries > 1 && (
+            <div className="text-xs text-yellow-700">Configuration: {components.batteryConfiguration.series} series × {components.batteryConfiguration.parallel} parallel</div>
+          )}
         </div>
         {/* Solar Panel Card */}
         <div className="rounded-xl bg-green-50 p-5 shadow flex flex-col items-start border border-green-100">
