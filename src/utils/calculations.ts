@@ -321,6 +321,7 @@ function selectBattery(
     for (const bat of possibleSeries) {
       const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
       const series = systemVoltage / batVoltage;
+      if (series < 2 && systemVoltage > 12) continue; // Defensive: never allow 1 in series for >12V
       const batteryKwh = parseFloat(bat.capacity.replace('KWH', ''));
       const stringKwh = batteryKwh * series;
       const batteryCapacityAh = (batteryKwh * 1000) / batVoltage;
