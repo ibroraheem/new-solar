@@ -297,25 +297,25 @@ export const appliancePresets = [
     name: 'Basic Home',
     description: 'LED Bulb (6pm-11pm), Ceiling Fan (10pm-6am), Phone Charger (9pm-7am), TV (7pm-10pm)',
     appliances: [
-      { id: 'led-bulb', name: 'LED Bulb', watts: 10, category: 'home', timeSlots: [
+      { id: 'led-bulb', name: 'LED Bulb', watts: 10, quantity: 4, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: true, durationMinutes: 240 }, // 4h
         { id: '2', name: 'morning', start: 6, end: 12, selected: false },
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: false },
         { id: '4', name: 'evening', start: 17, end: 22, selected: true, durationMinutes: 120 } // 2h
       ] },
-      { id: 'ceiling-fan', name: 'Ceiling Fan', watts: 80, category: 'home', timeSlots: [
+      { id: 'ceiling-fan', name: 'Ceiling Fan', watts: 80, quantity: 2, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: true, durationMinutes: 360 }, // 6h
         { id: '2', name: 'morning', start: 6, end: 12, selected: false },
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: false },
         { id: '4', name: 'evening', start: 17, end: 22, selected: true, durationMinutes: 60 } // 1h
       ] },
-      { id: 'phone-charger', name: 'Phone Charger', watts: 25, category: 'home', timeSlots: [
+      { id: 'phone-charger', name: 'Phone Charger', watts: 25, quantity: 2, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: true, durationMinutes: 120 }, // 2h
         { id: '2', name: 'morning', start: 6, end: 12, selected: false },
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: false },
         { id: '4', name: 'evening', start: 17, end: 22, selected: true, durationMinutes: 60 } // 1h
       ] },
-      { id: 'tv', name: 'TV (32–43 inch)', watts: 100, category: 'home', timeSlots: [
+      { id: 'tv', name: 'TV (32–43 inch)', watts: 100, quantity: 1, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: false },
         { id: '2', name: 'morning', start: 6, end: 12, selected: false },
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: false },
@@ -328,37 +328,37 @@ export const appliancePresets = [
     name: 'Family Home',
     description: 'LED Bulb (6pm-11pm), Ceiling Fan (10pm-6am), Refrigerator (24hrs), TV (7pm-10pm), Electric Kettle (6am-8am), Washing Machine (7am-8am)',
     appliances: [
-      { id: 'led-bulb', name: 'LED Bulb', watts: 10, category: 'home', timeSlots: [
+      { id: 'led-bulb', name: 'LED Bulb', watts: 10, quantity: 8, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: true, durationMinutes: 240 }, // 4h
         { id: '2', name: 'morning', start: 6, end: 12, selected: false },
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: false },
         { id: '4', name: 'evening', start: 17, end: 22, selected: true, durationMinutes: 120 } // 2h
       ] },
-      { id: 'ceiling-fan', name: 'Ceiling Fan', watts: 80, category: 'home', timeSlots: [
+      { id: 'ceiling-fan', name: 'Ceiling Fan', watts: 80, quantity: 4, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: true, durationMinutes: 360 }, // 6h
         { id: '2', name: 'morning', start: 6, end: 12, selected: false },
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: false },
         { id: '4', name: 'evening', start: 17, end: 22, selected: true, durationMinutes: 60 } // 1h
       ] },
-      { id: 'refrigerator-small', name: 'Refrigerator (Small)', watts: 150, category: 'home', timeSlots: [
+      { id: 'refrigerator-small', name: 'Refrigerator (Small)', watts: 150, quantity: 1, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: true, durationMinutes: 480 }, // 8h
         { id: '2', name: 'morning', start: 6, end: 12, selected: true, durationMinutes: 360 }, // 6h
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: true, durationMinutes: 300 }, // 5h
         { id: '4', name: 'evening', start: 17, end: 22, selected: true, durationMinutes: 240 } // 4h
       ] },
-      { id: 'tv', name: 'TV (32–43 inch)', watts: 100, category: 'home', timeSlots: [
+      { id: 'tv', name: 'TV (32–43 inch)', watts: 100, quantity: 2, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: false },
         { id: '2', name: 'morning', start: 6, end: 12, selected: false },
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: false },
         { id: '4', name: 'evening', start: 17, end: 22, selected: true, durationMinutes: 180 } // 3h
       ] },
-      { id: 'electric-kettle', name: 'Electric Kettle', watts: 2000, category: 'home', timeSlots: [
+      { id: 'electric-kettle', name: 'Electric Kettle', watts: 2000, quantity: 1, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: false },
         { id: '2', name: 'morning', start: 6, end: 12, selected: true, durationMinutes: 30 }, // 0.5h
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: false },
         { id: '4', name: 'evening', start: 17, end: 22, selected: false }
       ] },
-      { id: 'washing-machine-semi', name: 'Washing Machine (Semi-Auto)', watts: 300, category: 'home', timeSlots: [
+      { id: 'washing-machine-semi', name: 'Washing Machine (Semi-Auto)', watts: 300, quantity: 1, category: 'home', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: false },
         { id: '2', name: 'morning', start: 6, end: 12, selected: true, durationMinutes: 60 }, // 1h
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: false },
@@ -371,31 +371,31 @@ export const appliancePresets = [
     name: 'Small Office',
     description: 'Desktop Computer (8am-5pm), Office Fan (8am-5pm), Inkjet Printer (8am-5pm), Projector (8am-5pm), Water Dispenser (8am-5pm)',
     appliances: [
-      { id: 'desktop-computer', name: 'Desktop Computer', watts: 250, category: 'office', timeSlots: [
+      { id: 'desktop-computer', name: 'Desktop Computer', watts: 250, quantity: 4, category: 'office', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: false },
         { id: '2', name: 'morning', start: 6, end: 12, selected: true, durationMinutes: 180 }, // 3h
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: true, durationMinutes: 180 }, // 3h
         { id: '4', name: 'evening', start: 17, end: 22, selected: false }
       ] },
-      { id: 'office-fan', name: 'Office Fan', watts: 100, category: 'office', timeSlots: [
+      { id: 'office-fan', name: 'Office Fan', watts: 100, quantity: 2, category: 'office', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: false },
         { id: '2', name: 'morning', start: 6, end: 12, selected: true, durationMinutes: 120 }, // 2h
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: true, durationMinutes: 120 }, // 2h
         { id: '4', name: 'evening', start: 17, end: 22, selected: false }
       ] },
-      { id: 'inkjet-printer', name: 'Inkjet Printer', watts: 40, category: 'office', timeSlots: [
+      { id: 'inkjet-printer', name: 'Inkjet Printer', watts: 40, quantity: 1, category: 'office', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: false },
         { id: '2', name: 'morning', start: 6, end: 12, selected: true, durationMinutes: 30 }, // 0.5h
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: true, durationMinutes: 30 }, // 0.5h
         { id: '4', name: 'evening', start: 17, end: 22, selected: false }
       ] },
-      { id: 'projector', name: 'Projector', watts: 250, category: 'office', timeSlots: [
+      { id: 'projector', name: 'Projector', watts: 250, quantity: 1, category: 'office', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: false },
         { id: '2', name: 'morning', start: 6, end: 12, selected: true, durationMinutes: 60 }, // 1h
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: true, durationMinutes: 60 }, // 1h
         { id: '4', name: 'evening', start: 17, end: 22, selected: false }
       ] },
-      { id: 'water-dispenser', name: 'Water Dispenser', watts: 700, category: 'office', timeSlots: [
+      { id: 'water-dispenser', name: 'Water Dispenser', watts: 700, quantity: 1, category: 'office', timeSlots: [
         { id: '1', name: 'night', start: 22, end: 6, selected: false },
         { id: '2', name: 'morning', start: 6, end: 12, selected: true, durationMinutes: 30 }, // 0.5h
         { id: '3', name: 'afternoon', start: 12, end: 17, selected: true, durationMinutes: 30 }, // 0.5h
