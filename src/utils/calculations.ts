@@ -241,170 +241,136 @@ function selectBattery(
   totalBatteries: number;
   name: string;
 } {
-  // Calculate energy needed for backup period (not hourly average)
-  // Use the actual daily energy demand for the backup period
-  const energyNeeded = (dailyEnergyDemand * backupHours / 24) / EFFICIENCY_FACTOR;
-
-  // Calculate minimum battery capacity based on C-rate requirements
-  // Standard C-rate for deep cycle batteries: 0.1C to 0.2C
-  const cRate = 0.15; // 15% of capacity per hour (conservative)
-  const minCapacityAh = (inverterWatts / systemVoltage) / cRate;
-  
-  // Calculate capacity needed for runtime
-  const runtimeCapacityAh = (energyNeeded * 1000) / systemVoltage;
-  
-  // Use the higher of the two requirements
-  const requiredCapacityAh = Math.max(minCapacityAh, runtimeCapacityAh);
-
-  // Prefer lithium batteries first
-  const lithiumBatteries = BATTERY_PRICING.filter(bat => bat.name.toLowerCase().includes('lithium'));
-  const tubularBatteries = BATTERY_PRICING.filter(bat => bat.name.toLowerCase().includes('tubular'));
-
-  function findBestConfig(batteries: typeof BATTERY_PRICING) {
-    let bestConfig = null;
-    let bestBatteryCount = Infinity;
-    let bestEfficiency = Infinity;
-
-    // Try to find best config for given battery type
-    const exactVoltageBatteries = batteries.filter(bat => {
-      const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
-      return batVoltage === systemVoltage;
-    });
-
-    // Check exact voltage matches first - prioritize single battery
-    for (const battery of exactVoltageBatteries) {
-      const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
-      const batteryCapacityAh = (batteryKwh * 1000) / systemVoltage;
-      
-      // Try single battery first
-      if (batteryCapacityAh >= requiredCapacityAh) {
-        const efficiency = batteryCapacityAh / requiredCapacityAh;
-        if (!bestConfig || batteryCapacityAh < bestConfig.totalCapacityAh) {
-          bestConfig = {
-            battery,
-            series: 1,
-            parallel: 1,
-            totalBatteries: 1,
-            totalCapacity: batteryKwh,
-            totalCapacityAh: batteryCapacityAh
-          };
-          bestBatteryCount = 1;
-          bestEfficiency = efficiency;
-        }
-      }
-      
-      // If single battery doesn't work, try parallel (but only if we haven't found a single battery solution)
-      if (!bestConfig || bestBatteryCount > 1) {
-        const parallel = Math.ceil(requiredCapacityAh / batteryCapacityAh);
-        const totalBatteries = parallel;
-        const totalCapacity = batteryKwh * parallel;
-        const totalCapacityAh = batteryCapacityAh * parallel;
-        
-        if (totalCapacityAh >= requiredCapacityAh && totalBatteries <= 8) {
-          const efficiency = totalCapacityAh / requiredCapacityAh;
-          if (!bestConfig || totalBatteries < bestBatteryCount || 
-              (totalBatteries === bestBatteryCount && efficiency < bestEfficiency)) {
-            bestConfig = {
-              battery,
-              series: 1,
-              parallel,
-              totalBatteries,
-              totalCapacity,
-              totalCapacityAh
-            };
-            bestBatteryCount = totalBatteries;
-            bestEfficiency = efficiency;
-          }
-        }
-      }
-    }
-
-    // If no exact voltage match, try series configuration
-    if (!bestConfig) {
-      const availableBatteries = batteries.filter(bat => {
-        const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
-        return batVoltage > 0 && systemVoltage % batVoltage === 0;
-      });
-
-      for (const battery of availableBatteries) {
-        const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
-        const batteryVoltage = parseInt(battery.voltage?.replace('V', '') || '0');
-        const batteryCapacityAh = (batteryKwh * 1000) / batteryVoltage;
-        const series = systemVoltage / batteryVoltage;
-        
-        // Try single series string first
-        if (batteryCapacityAh * series >= requiredCapacityAh) {
-          const efficiency = (batteryCapacityAh * series) / requiredCapacityAh;
-          if (!bestConfig || series < bestBatteryCount || 
-              (series === bestBatteryCount && efficiency < bestEfficiency)) {
-            bestConfig = {
-              battery,
-              series,
-              parallel: 1,
-              totalBatteries: series,
-              totalCapacity: batteryKwh * series,
-              totalCapacityAh: batteryCapacityAh * series
-            };
-            bestBatteryCount = series;
-            bestEfficiency = efficiency;
-          }
-        }
-        
-        // If single series doesn't work, try series-parallel
-        if (!bestConfig || bestBatteryCount > series) {
-          const parallel = Math.ceil(requiredCapacityAh / (batteryCapacityAh * series));
-          const totalBatteries = series * parallel;
-          const totalCapacity = batteryKwh * series * parallel;
-          const totalCapacityAh = batteryCapacityAh * series * parallel;
-          
-          if (totalCapacityAh >= requiredCapacityAh && totalBatteries <= 8) {
-            const efficiency = totalCapacityAh / requiredCapacityAh;
-            if (!bestConfig || totalBatteries < bestBatteryCount || 
-                (totalBatteries === bestBatteryCount && efficiency < bestEfficiency)) {
-              bestConfig = {
-                battery,
-                series,
-                parallel,
-                totalBatteries,
-                totalCapacity,
-                totalCapacityAh
-              };
-              bestBatteryCount = totalBatteries;
-              bestEfficiency = efficiency;
-            }
-          }
-        }
-      }
-    }
-
-    return bestConfig;
-  }
-
-  let bestConfig = findBestConfig(lithiumBatteries);
   let type = 'Lithium';
-  
-  if (!bestConfig) {
-    bestConfig = findBestConfig(tubularBatteries);
+  let batteryEfficiency = 0.9;
+  let availableBatteries = BATTERY_PRICING.filter(
+    bat => bat.name.toLowerCase().includes('lithium')
+  );
+  if (availableBatteries.length === 0) {
     type = 'Tubular';
+    batteryEfficiency = 0.8;
+    availableBatteries = BATTERY_PRICING.filter(
+      bat => bat.name.toLowerCase().includes('tubular')
+    );
   }
-  
-  if (!bestConfig) {
-    throw new Error(`Cannot meet battery requirement (${requiredCapacityAh.toFixed(1)}Ah) with available batteries for ${systemVoltage}V system.`);
+  if (availableBatteries.length === 0) {
+    throw new Error('No batteries available.');
   }
 
-  // Calculate C-rate for validation
-  const actualCrate = (inverterWatts / systemVoltage) / bestConfig.totalCapacityAh;
-  if (actualCrate > 0.3) {
-    console.warn(`High C-rate detected: ${actualCrate.toFixed(2)}C. Consider larger battery for better longevity.`);
+  const requiredKwh = (dailyEnergyDemand * backupHours) / 24 / batteryEfficiency;
+
+  // 1. Try batteries at system voltage
+  const voltageMatched = availableBatteries.filter(
+    bat => parseInt(bat.voltage?.replace('V', '') || '0') === systemVoltage
+  );
+  if (voltageMatched.length > 0) {
+    // Sort by kWh ascending
+    const sorted = voltageMatched.slice().sort((a, b) => parseFloat(a.capacity.replace('KWH', '')) - parseFloat(b.capacity.replace('KWH', '')));
+    // Find the smallest battery >= requiredKwh
+    const single = sorted.find(bat => parseFloat(bat.capacity.replace('KWH', '')) >= requiredKwh);
+    if (single) {
+      const batteryKwh = parseFloat(single.capacity.replace('KWH', ''));
+      const batteryCapacityAh = (batteryKwh * 1000) / systemVoltage;
+      return {
+        type,
+        capacityAh: Math.round(batteryCapacityAh),
+        series: 1,
+        parallel: 1,
+        totalBatteries: 1,
+        name: single.name
+      };
+    }
+    // If requiredKwh is less than the smallest available, use one unit of the smallest
+    if (requiredKwh < parseFloat(sorted[0].capacity.replace('KWH', ''))) {
+      const batteryKwh = parseFloat(sorted[0].capacity.replace('KWH', ''));
+      const batteryCapacityAh = (batteryKwh * 1000) / systemVoltage;
+      return {
+        type,
+        capacityAh: Math.round(batteryCapacityAh),
+        series: 1,
+        parallel: 1,
+        totalBatteries: 1,
+        name: sorted[0].name
+      };
+    }
+    // Otherwise, use minimum number in parallel
+    const battery = sorted[0];
+    const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
+    const batteryCapacityAh = (batteryKwh * 1000) / systemVoltage;
+    const parallel = Math.ceil(requiredKwh / batteryKwh);
+    return {
+      type,
+      capacityAh: Math.round(batteryCapacityAh * parallel),
+      series: 1,
+      parallel,
+      totalBatteries: parallel,
+      name: battery.name
+    };
   }
-  
+
+  // 2. Try series config if no voltage-matched batteries
+  // Find all batteries where systemVoltage is a multiple of battery voltage
+  const possibleSeries = availableBatteries.filter(bat => {
+    const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
+    return batVoltage > 0 && systemVoltage % batVoltage === 0;
+  });
+  if (possibleSeries.length === 0) {
+    throw new Error(`No suitable batteries for ${systemVoltage}V system.`);
+  }
+  // For each, calculate series count and string kWh
+  let bestConfig = null;
+  let minTotalBatteries = Infinity;
+  for (const bat of possibleSeries) {
+    const batVoltage = parseInt(bat.voltage?.replace('V', '') || '0');
+    const series = systemVoltage / batVoltage;
+    const batteryKwh = parseFloat(bat.capacity.replace('KWH', ''));
+    const stringKwh = batteryKwh * series;
+    const batteryCapacityAh = (batteryKwh * 1000) / batVoltage;
+    // If a single string meets/exceeds requiredKwh, use one string
+    if (stringKwh >= requiredKwh) {
+      if (series < minTotalBatteries) {
+        bestConfig = {
+          type,
+          capacityAh: Math.round(batteryCapacityAh * series),
+          series,
+          parallel: 1,
+          totalBatteries: series,
+          name: bat.name
+        };
+        minTotalBatteries = series;
+      }
+      // If requiredKwh is less than the smallest possible string, use one string
+      continue;
+    }
+    // Otherwise, use minimum number of parallel strings
+    const parallel = Math.ceil(requiredKwh / stringKwh);
+    const totalBatteries = series * parallel;
+    if (totalBatteries < minTotalBatteries) {
+      bestConfig = {
+        type,
+        capacityAh: Math.round(batteryCapacityAh * series * parallel),
+        series,
+        parallel,
+        totalBatteries,
+        name: bat.name
+      };
+      minTotalBatteries = totalBatteries;
+    }
+  }
+  if (bestConfig) return bestConfig;
+  // Fallback: use one string of the smallest possible series config
+  const fallback = possibleSeries[0];
+  const fallbackVoltage = parseInt(fallback.voltage?.replace('V', '') || '0');
+  const fallbackSeries = systemVoltage / fallbackVoltage;
+  const fallbackKwh = parseFloat(fallback.capacity.replace('KWH', ''));
+  const fallbackCapacityAh = (fallbackKwh * 1000) / fallbackVoltage;
   return {
     type,
-    capacityAh: Math.round(bestConfig.totalCapacityAh),
-    series: bestConfig.series,
-    parallel: bestConfig.parallel,
-    totalBatteries: bestConfig.totalBatteries,
-    name: bestConfig.battery.name
+    capacityAh: Math.round(fallbackCapacityAh * fallbackSeries),
+    series: fallbackSeries,
+    parallel: 1,
+    totalBatteries: fallbackSeries,
+    name: fallback.name
   };
 }
 
