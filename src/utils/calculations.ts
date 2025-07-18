@@ -280,21 +280,8 @@ function selectBattery(
         name: single.name
       };
     }
-    // If requiredKwh is less than the smallest available, use one unit of the smallest
-    if (requiredKwh < parseFloat(sorted[0].capacity.replace('KWH', ''))) {
-      const batteryKwh = parseFloat(sorted[0].capacity.replace('KWH', ''));
-      const batteryCapacityAh = (batteryKwh * 1000) / systemVoltage;
-      return {
-        type,
-        capacityAh: Math.round(batteryCapacityAh),
-        series: 1,
-        parallel: 1,
-        totalBatteries: 1,
-        name: sorted[0].name
-      };
-    }
-    // Otherwise, use minimum number in parallel
-    const battery = sorted[0];
+    // If no single battery is large enough, use minimum number in parallel
+    const battery = sorted[sorted.length - 1]; // largest available
     const batteryKwh = parseFloat(battery.capacity.replace('KWH', ''));
     const batteryCapacityAh = (batteryKwh * 1000) / systemVoltage;
     const parallel = Math.ceil(requiredKwh / batteryKwh);
